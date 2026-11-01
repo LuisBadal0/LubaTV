@@ -96,8 +96,6 @@ The script copies the files from an installed LubaTV if it finds one, and otherw
 | Linux | `~/.local/share/lubatv` | `~/.cache/lubatv/logs` |
 | macOS | `~/Library/Application Support/dev.luisbadalo.lubatv` | `~/Library/Caches/dev.luisbadalo.lubatv/logs` |
 
-The first time LubaTV starts, it copies the database from the app it was forked from, if that is installed, so your sources, favorites and settings carry over. Files exported from it (`.otv`, `.otvg`, `.otvp`, `.otvf`) still import; LubaTV exports `.ltv`, `.ltvg`, `.ltvp` and `.ltvf`.
-
 If something stays broken after an update, **Settings → Delete everything** resets the app.
 
 ## Privacy

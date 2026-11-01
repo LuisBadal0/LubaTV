@@ -167,7 +167,7 @@ export class SourceTileComponent {
       title: "Select a favorites backup",
       directory: false,
       multiple: false,
-      filters: [{ name: "extension", extensions: ["ltvf", "otvf"] }],
+      filters: [{ name: "extension", extensions: ["ltvf"] }],
     });
     if (file) {
       await this.memory.tryIPC(

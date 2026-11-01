@@ -23,7 +23,7 @@ export class ImportModalComponent {
       directory: false,
       canCreateDirectories: false,
       title: "Select a LubaTV export file",
-      filters: [{ name: "extension", extensions: ["ltv", "ltvg", "otv", "otvg"] }],
+      filters: [{ name: "extension", extensions: ["ltv", "ltvg"] }],
     });
     if (file == null) {
       return;

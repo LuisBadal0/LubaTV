@@ -122,7 +122,7 @@ export class SetupComponent {
       directory: false,
       canCreateDirectories: false,
       title: "Select a LubaTV source export (.ltvp)",
-      filters: [{ name: "extension", extensions: ["ltvp", "otvp"] }],
+      filters: [{ name: "extension", extensions: ["ltvp"] }],
     });
     if (file == null) {
       return;
