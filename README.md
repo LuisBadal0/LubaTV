@@ -1,151 +1,113 @@
-# Fred TV (Formerly Open TV)
+<p align="center">
+  <img src="src/assets/brand/lubatv-icon.svg" width="96" alt="LubaTV icon" />
+</p>
 
-Completely rewritten to accommodate new features and to be even speedier, Fred TV has been carefully crafted to deliver the best IPTV experience.
+<h1 align="center">LubaTV</h1>
 
-<a href="https://apps.microsoft.com/detail/9PBWX3RKR1QX?launch=true&mode=mini">
-	<img src="https://get.microsoft.com/images/en-us%20dark.svg" width="350"/>
-</a>
-<a href="https://flathub.org/apps/dev.fredol.open-tv">
-  <img src="https://dl.flathub.org/assets/badges/flathub-badge-en.svg" width="300"/>
-</a>
-<a href="https://aur.archlinux.org/packages/open-tv-bin">
-  <img src="https://raw.githubusercontent.com/Fredolx/open-tv/refs/heads/main/readme_imgs/aur-open-tv.svg" width="350" />
-</a>
-<a href="https://apps.apple.com/ca/app/open-tv-open-source-iptv/id6742751800">
-  <img src="https://raw.githubusercontent.com/Fredolx/open-tv/refs/heads/main/readme_imgs/app-store.svg" width=300 />
-</a>
-<a href="https://play.google.com/store/apps/details?id=dev.fredol.open_tv">
-  <img src="https://raw.githubusercontent.com/Fredolx/open-tv/refs/heads/main/readme_imgs/gplay.png">
-</a>
+<p align="center">
+  A fast, keyboard-friendly IPTV player for the desktop, built with Tauri, Rust and Angular.
+</p>
 
-# This project NEEDS your help. Please consider donating on [Github](https://github.com/sponsors/Fredolx), [Paypal](https://paypal.me/fredolx) or directly by [crypto](#donate-crypto-thank-you)
-I've been developing and maintaining this project alone and for entirely for free over the past 2 years. I am in dire need of support to continue developing this project. I've never added annoying donation pop-ups or anything of the sort to make sure you have the fastest and cleanest IPTV experience and I'm committed to keep this project FREE & OPEN-SOURCE. To keep that commitment, I need your support!
+![LubaTV home screen](screenshots/lubatv-home.png)
 
-![Image of the app](https://github.com/Fredolx/open-tv/blob/main/screenshots/demo1.png)
+## Features
 
-## Features:
-- Import your IPTV channels from any source (M3U File, M3U link, Xtream) 🗃️
-- Record while watching 🎥
-- Multi IPTV sources 🎊
-- Control the UI from a TV remote 📺
-- Super low RAM usage, crazy speeds, and instant search 🚅
-- Refresh your sources when you need it 🔄
-- Add channels to favorites 🌟
-- Make your own custom channels
-- Share your custom channels with friends
-- Re-stream channels to friends or other devices (phone, tv)
+- **Any IPTV source:** M3U files, M3U links and Xtream accounts, with several sources at once
+- **Live TV, movies and series**, with categories, seasons and episodes
+- **Instant search**, by whole phrase or by keywords
+- **Favorites, history and hidden items**, with bulk hide and favorite from the search bar
+- **EPG** for Xtream sources, with notifications for upcoming programmes
+- **Catch-up** on channels that provide an archive
+- **Record** live channels while you watch, and **download** movies
+- **Re-stream** a channel to other devices on your network
+- **Custom channels and groups** that you can export and share
+- **Keyboard and TV-remote navigation**
+- Playback through [mpv](https://mpv.io/), with optional hardware decoding and GPU rendering
 
-## Prerequisites
-If you are on Windows or use the flatpak on Linux; SKIP THIS PART. 
+| Settings | First run |
+|---|---|
+| ![Settings](screenshots/lubatv-settings.png) | ![Setup](screenshots/lubatv-setup.png) |
 
-The app depends on mpv, ffmpeg and yt-dlp. 
-If you are on MacOS, you must use Brew or MacPorts to install those dependencies. 
+## Requirements
 
-On Fedora, you must add rpmfusion to install those packages.
+LubaTV plays streams with **mpv**, uses **ffmpeg** to re-stream, and uses **yt-dlp** for some stream links.
 
-On Debian or LTS distro, I would strongly suggest using a backport for yt-dlp.
-
-The Windows build **comes with mpv included** (.msi), but you can still install mpv from a package manager of your choice to always have the latest version installed
+- **Windows:** the installer includes all three.
+- **macOS and Linux:** install them with your package manager.
 
 ```
-brew install mpv ffmpeg yt-dlp #MacOS
-sudo dnf install mpv ffmpeg yt-dlp #Fedora
-sudo zypper install mpv ffmpeg yt-dlp #OpenSUSE
-sudo pacman -Syu mpv ffmpeg yt-dlp #Arch
-sudo apt install mpv ffmpeg yt-dlp #Debian/Ubuntu
-scoop install mpv ffmpeg yt-dlp # Windows
-choco install mpv ffmpeg yt-dlp # Windows alternative
+brew install mpv ffmpeg yt-dlp            # macOS
+sudo dnf install mpv ffmpeg yt-dlp        # Fedora (needs RPM Fusion)
+sudo zypper install mpv ffmpeg yt-dlp     # openSUSE
+sudo pacman -Syu mpv ffmpeg yt-dlp        # Arch
+sudo apt install mpv ffmpeg yt-dlp        # Debian / Ubuntu
 ```
 
-## Docker
-You can install Fred TV using Docker. It wouldn't necessarily be the recommended way to install it, but it's now possible.
-You should always install Fred TV from either Releases or Flatpak on Linux.
-
-For Nvidia GPUs:
-```
-docker run --rm -it \
-  --net=host \
-  --env="DISPLAY" \
-  --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
-  --volume="$HOME/.Xauthority:/root/.Xauthority:rw" \
-  --volume="$HOME/.local/share/open-tv:/root/.local/share/open-tv" \
-  --gpus all \
-  ghcr.io/fredolx/open-tv:latest
-```
-For everyone else (Intel, AMD):
-```
-docker run --rm -it \
-  --net=host \
-  --env="DISPLAY" \
-  --volume="/tmp/.X11-unix:/tmp/.X11-unix:rw" \
-  --volume="$HOME/.Xauthority:/root/.Xauthority:rw" \
-  --volume="$HOME/.local/share/open-tv:/root/.local/share/open-tv" \
-  --device /dev/dri \
-  ghcr.io/fredolx/open-tv:latest
-```
-
-
-## Feedback
-Feel free to submit any kind of feedback by creating a new issue.
+On Debian-based LTS releases, a backported yt-dlp is recommended; the packaged version is often too old.
 
 ## Hotkeys
-* F1: Help
-* Ctrl + a: Show all channels
-* Ctrl + s: Show categories
-* Ctrl + d: Show favorites
-* Ctrl + f: Search
-* Ctrl + q: Enable/Disable livestreams
-* Ctrl + w: Enable/Disable movies
-* Ctrl + e: Enable/Disable series
-* Backspace/Esc: Go back
-* Arrow keys/Tab/Shift+Tab: Navigation
 
-If you have a tv remote or air mouse that has slightly different bindings for general nav (back, up, down, left, right),
-please open an issue and I will add them if it's feasible. Otherwise, you can still use hwdb to make them match Fred TV's bindings.
+| Keys | Action |
+|---|---|
+| F1 | Show all hotkeys |
+| Ctrl + F, Ctrl + Space | Search |
+| Ctrl + A | All |
+| Ctrl + S | Categories |
+| Ctrl + D | History |
+| Ctrl + R | Favorites |
+| Ctrl + Q / W / E | Show or hide live TV / movies / series |
+| Arrow keys, Tab, Shift + Tab | Move between items |
+| Enter | Play or open |
+| Backspace, Esc | Go back |
 
-## Settings explained
+On macOS, Cmd works in place of Ctrl for search and the views.
 
-**Stream Caching**
+## Settings worth knowing
 
-Why enabling:
-  - If you have a slow internet connection/IPTV provider causing the stream to pause often
+**Stream caching:** turn it on if your connection or provider makes streams pause often. Turn it off for lower latency, or if streams drop completely and jump ahead or behind when they recover.
 
-Why disabling: 
-  - If the stream often drops completely. It will prevent the stream from jumping too far ahead/behind
-  - If you have a good internet/provider and want lower latency
-  - Can prevent some weird bugs/slowdowns
+**Hardware acceleration** adds `hwdec=auto` to mpv. **Modern hardware optimizations** adds `--vo=gpu-next --profile=high-quality` for HDR and higher-quality GPU rendering. Anything else can go in **Global MPV parameters**.
 
-## Donate Crypto (Thank you!)
-BTC:
+## Building from source
+
+You need [Node.js](https://nodejs.org/) 20 or newer, [Rust](https://www.rust-lang.org/tools/install) 1.91 or newer, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform.
+
 ```
-bc1q7v27u4mrxhtqzl97pcp4vl52npss760epsheu3
-```
-
-ETH:
-```
-0x171D5B628eff75c98c141aD5584FffA209274365
+npm ci
+npm run tauri dev     # run in development
+npm run build         # build installers into src-tauri/target/release/bundle
 ```
 
-LTC:
+### Player files on Windows
+
+Installers ship mpv, ffmpeg and yt-dlp in a `deps` folder next to the app. Development builds look in `src-tauri/deps` instead. Fill it once with:
+
 ```
-ltc1qzxgp2grt9ayvpv0dur7lgzgf88yp09h2ytmga0
+./scripts/fetch-windows-deps.ps1
 ```
 
-BCH:
-```
-bitcoincash:qz4mauqyytkvhp9yze0qhgn2nnlv4z5glckyysxg2n
-```
+The script copies the files from an installed LubaTV or Fred TV if it finds one, and otherwise downloads the same builds the release workflow uses. `-Download` forces a download, and `-Force` replaces existing files. The folder is git-ignored because the binaries are large. An mpv found on your `PATH` is still used first.
 
-SOL:
-```
-AM7roSrxBKrS5mG7q6aXnQHZKh3ArtBxvG3x1B1VjKhj
-```
+## Where LubaTV keeps its data
 
-BNB:
-```
-0x0C8C5217a8044b3736aD82CCFB9f099597b65253
-```
+LubaTV keeps Open TV's data folders, so an existing Open TV / Fred TV library carries over.
 
-## Disclaimer
+| | Database | Logs |
+|---|---|---|
+| Windows | `%APPDATA%\fredol\open-tv\data` | `%LOCALAPPDATA%\fredol\open-tv\cache\logs` |
+| Linux | `~/.local/share/open-tv` | `~/.cache/open-tv/logs` |
+| macOS | `~/Library/Application Support/dev.fredol.open-tv` | `~/Library/Caches/dev.fredol.open-tv/logs` |
 
-Fred TV is an independent open-source project created to provide a fast and powerful IPTV experience. The name "Fred TV" is used solely to represent this specific software and its purpose as described in the project documentation. Any other software, applications, or products bearing the same or similar name are unrelated to this project. Any resemblance to other software or applications is purely coincidental and unintended. We do not intend to cause confusion or imply affiliation with any other products or organizations that may share a similar name.
+If something stays broken after an update, **Settings → Delete everything** resets the app.
+
+## Privacy
+
+LubaTV has no accounts, analytics or telemetry. It connects to the IPTV sources you add, the stream and logo addresses they list, and, when you re-stream, to [ipify](https://www.ipify.org/) to find your public IP address for the share link.
+
+## Fork notice
+
+LubaTV is a fork of [Open TV](https://github.com/Fredolx/open-tv) (also released as Fred TV) by Frédéric Lachapelle. It is independent and not affiliated with or endorsed by the Open TV project. Thanks to its author for the original work.
+
+## License
+
+[GPL-2.0](LICENSE), as inherited from Open TV.

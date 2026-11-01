@@ -18,7 +18,7 @@ use reqwest::{
 };
 use serde::Serialize;
 use std::{
-    env::{consts::OS, current_exe},
+    env::consts::OS,
     fs::File,
     path::{Path, PathBuf},
     sync::LazyLock,
@@ -262,11 +262,35 @@ pub fn get_bin(bin: &str) -> String {
 }
 
 fn get_bin_from_deps(bin: &str) -> String {
-    let mut path = current_exe().unwrap();
-    path.pop();
-    path.push("deps");
+    let mut path = deps_dir();
     path.push(bin);
     return path.to_string_lossy().to_string();
+}
+
+/// Folder with the bundled players. Installers put mpv, ffmpeg and yt-dlp in a `deps`
+/// folder next to the executable.
+#[cfg(not(debug_assertions))]
+fn deps_dir() -> PathBuf {
+    let mut path = std::env::current_exe().unwrap();
+    path.pop();
+    path.push("deps");
+    path
+}
+
+/// Development builds run from Cargo's target folder, so they use the project's
+/// `src-tauri/deps` instead (filled by `scripts/fetch-windows-deps.ps1`).
+#[cfg(debug_assertions)]
+fn deps_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("deps")
+}
+
+/// Error context for a player binary that failed to start.
+pub fn bin_start_error(bin: &str, path: &str) -> String {
+    let mut message = format!("Could not start {bin} ({path}). Make sure {bin} is installed.");
+    if cfg!(debug_assertions) && OS == "windows" {
+        message.push_str(" For development builds, run scripts/fetch-windows-deps.ps1.");
+    }
+    message
 }
 
 pub fn find_macos_bin(bin: &str) -> String {
@@ -360,7 +384,15 @@ pub fn get_user_agent_from_source(source: &Source) -> Result<String> {
 
 #[cfg(test)]
 mod test_utils {
-    use super::sanitize;
+    use super::{get_bin_from_deps, sanitize};
+
+    #[test]
+    fn test_dev_deps_dir() {
+        let expected = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("deps")
+            .join("mpv");
+        assert_eq!(get_bin_from_deps("mpv"), expected.to_string_lossy());
+    }
 
     #[test]
     fn test_sanitize() {

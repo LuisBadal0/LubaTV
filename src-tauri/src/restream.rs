@@ -22,7 +22,7 @@ use crate::{
     settings::get_settings,
     sql,
     types::{AppState, Channel, CustomChannel, NetworkInfo},
-    utils::{get_bin, serialize_to_file},
+    utils::{bin_start_error, get_bin, serialize_to_file},
 };
 
 const WAN_IP_API: &str = "https://api.ipify.org";
@@ -33,7 +33,8 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Child> {
     let headers = sql::get_channel_headers_by_id(channel.id.context("no channel id")?)?;
     let playlist_dir = get_playlist_dir(restream_dir);
-    let mut command = Command::new(get_bin(FFMPEG_BIN_NAME));
+    let ffmpeg_path = get_bin(FFMPEG_BIN_NAME);
+    let mut command = Command::new(&ffmpeg_path);
     if let Some(headers) = headers {
         if let Some(referrer) = headers.referrer {
             command.arg("-headers");
@@ -80,7 +81,8 @@ fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Chi
         .arg(playlist_dir)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .spawn()?;
+        .spawn()
+        .with_context(|| bin_start_error(FFMPEG_BIN_NAME, &ffmpeg_path))?;
     Ok(child)
 }
 

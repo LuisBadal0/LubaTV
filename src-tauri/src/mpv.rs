@@ -1,6 +1,6 @@
 use crate::settings::get_default_record_path;
 use crate::types::{AppState, ChannelHttpHeaders, Source};
-use crate::utils::{find_macos_bin, get_bin};
+use crate::utils::{bin_start_error, find_macos_bin, get_bin};
 use crate::{log, sql};
 use crate::{media_type, settings::get_settings, types::Channel};
 use anyhow::{Context, Result};
@@ -71,7 +71,8 @@ pub async fn play(
         .args(args)
         .stdout(Stdio::piped())
         .kill_on_drop(true)
-        .spawn()?;
+        .spawn()
+        .with_context(|| bin_start_error(MPV_BIN_NAME, &MPV_PATH))?;
     let token = CancellationToken::new();
     let channel_id = channel.id.context("no channel id")?;
     if let Some(source_id) = source.as_ref().and_then(|s| s.id) {

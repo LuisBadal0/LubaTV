@@ -2,3 +2,6 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+
+# Player binaries for development (scripts/fetch-windows-deps.ps1)
+/deps/
