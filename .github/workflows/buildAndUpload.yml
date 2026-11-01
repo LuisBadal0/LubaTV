@@ -152,7 +152,15 @@ jobs:
       - name: Create release
         if: steps.existing.outputs.skip == 'false'
         run: |
-          ls -la installers
+          # Artifacts keep their bundle folders (msi/, nsis/, deb/, rpm/), so
+          # collect the files themselves and make sure all four are there.
+          mapfile -t files < <(find installers -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.rpm" \) | sort)
+          if [ "${#files[@]}" -ne 4 ]; then
+            echo "::error::Expected 4 installers (.exe, .msi, .deb, .rpm), found ${#files[@]}"
+            find installers -type f
+            exit 1
+          fi
+          printf '%s\n' "${files[@]}"
           cat > notes.md <<'EOF'
           ## Install
 
@@ -162,7 +170,7 @@ jobs:
 
           On Linux, mpv, ffmpeg and yt-dlp come from your distribution.
           EOF
-          gh release create "$TAG" installers/* \
+          gh release create "$TAG" "${files[@]}" \
             --target "$GITHUB_SHA" \
             --title "LubaTV $TAG" \
             --notes-file notes.md \
