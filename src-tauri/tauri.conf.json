@@ -36,20 +36,15 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "publisher": "Luís Badalo",
+    "copyright": "Copyright © 2026 Luís Badalo. Licensed under the GPL-2.0.",
+    "category": "Video",
+    "shortDescription": "A fast, keyboard-friendly IPTV player",
+    "longDescription": "LubaTV plays IPTV from M3U files, M3U links and Xtream accounts, with live TV, movies and series, instant search, favorites, EPG, catch-up, recording and re-streaming.",
+    "homepage": "https://github.com/LuisBadal0/LubaTV",
     "windows": {
       "wix": {
-        "language": "en-US",
-        "fragmentPaths": [
-          "./windows/fragments/deps.wxs"
-        ],
-        "componentGroupRefs": [
-          "DependencyComponents"
-        ],
-        "componentRefs": [
-          "MpvComponent",
-          "FfmpegComponent",
-          "YtDlpComponent"
-        ]
+        "language": "en-US"
       }
     },
     "linux": {

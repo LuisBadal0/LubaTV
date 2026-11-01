@@ -28,11 +28,23 @@
 |---|---|
 | ![Settings](screenshots/lubatv-settings.png) | ![Setup](screenshots/lubatv-setup.png) |
 
+## Install
+
+Download the latest version from [Releases](https://github.com/LuisBadal0/LubaTV/releases/latest):
+
+| Platform | File |
+|---|---|
+| Windows | `LubaTV_<version>_x64-setup.exe` (installs for your user, no admin needed) or `LubaTV_<version>_x64_en-US.msi` (installs for all users) |
+| Debian / Ubuntu | `LubaTV_<version>_amd64.deb` |
+| Fedora / openSUSE | `LubaTV-<version>-1.x86_64.rpm` |
+
+The Windows installers are not code-signed yet, so SmartScreen may warn the first time: choose **More info → Run anyway**.
+
 ## Requirements
 
 LubaTV plays streams with **mpv**, uses **ffmpeg** to re-stream, and uses **yt-dlp** for some stream links.
 
-- **Windows:** the installer includes all three.
+- **Windows:** both installers include all three.
 - **macOS and Linux:** install them with your package manager.
 
 ```
@@ -75,8 +87,15 @@ You need [Node.js](https://nodejs.org/) 20 or newer, [Rust](https://www.rust-lan
 ```
 npm ci
 npm run tauri dev     # run in development
-npm run build         # build installers into src-tauri/target/release/bundle
+npm run build         # build packages into src-tauri/target/release/bundle
+npm run build:windows # Windows: .exe and .msi installers with the player files included
 ```
+
+`build:windows` needs the player files in `src-tauri/deps` first (see below).
+
+### Releasing
+
+Every merge to `main` builds the Windows installers and Linux packages. If the version is new, CI publishes them as GitHub release `v<version>` with notes listing the merged pull requests. To publish a release, bump the version in the same pull request, in all three of `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. CI fails if they differ. A merge that keeps an already-released version builds but publishes nothing.
 
 ### Player files on Windows
 
