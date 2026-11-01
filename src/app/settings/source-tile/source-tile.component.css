@@ -1,9 +1,20 @@
 .source {
-    border-radius: 0.25rem;
-    background-color: #343a40;
+    border-radius: var(--lt-radius-lg);
+    background-color: var(--lt-surface);
+    border: 1px solid var(--lt-border);
     width: 100%;
-    padding: 1rem;
+    padding: 1.25rem 1.5rem;
     position: relative;
+}
+
+.source h4 {
+    font-size: 1.15rem;
+    margin-bottom: 0;
+}
+
+.source .col-3 {
+    color: var(--lt-text-muted);
+    font-size: 0.9rem;
 }
 
 .thin-line {
@@ -77,11 +88,11 @@ button:hover .trash-lid {
     transform: translateY(-50%);
     cursor: pointer;
     transition: transform 0.3s ease;
-    color: white;
+    color: var(--lt-accent);
 }
 
 .check:hover {
-    transform: translateY(-50%) scale(125%)
+    transform: translateY(-50%) scale(1.1)
 }
 
 button .pen {
@@ -98,6 +109,6 @@ button:hover .pen {
     position: absolute;
     top: 10px;
     right: 15px;
-    opacity: 0.5;
+    color: var(--lt-text-subtle);
     font-size: 0.8em;
 }

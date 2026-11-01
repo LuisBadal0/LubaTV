@@ -1,52 +1,85 @@
+.setup-page {
+  max-width: 680px;
+  padding: 3.5rem 1rem 3rem;
+}
+
+.setup-hero {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.setup-hero img {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 12px 28px rgba(139, 92, 246, 0.45));
+}
+
+.setup-hero h1 {
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
+}
+
+.setup-hero p {
+  color: var(--lt-text-muted);
+}
+
+.setup-types {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.setup-types .lt-segmented {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.setup-form {
+  padding: 1.5rem;
+}
+
+.setup-form .form-control {
+  height: 2.75rem;
+}
+
 .arrow {
-    position: absolute;
-    top: 2%;
-    left: 2%;
-    width: 2.5em;
-    height: 2.5rem;
-    cursor: pointer;
-    transition: transform 0.3s ease;
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
 }
 
-.arrow:hover {
-    transform: scale(125%);
-}
-
-button .anim-svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    transition: transform 0.3s ease;
-}
-
-button:hover .anim-svg {
-    transform: scale(125%);
-}
-
+button .anim-svg,
 button .pen {
-    width: 1.5rem;
-    height: 1.5rem;
-    transition: transform 0.3s ease;
+  width: 1.4rem;
+  height: 1.4rem;
+  transition: transform 0.3s ease;
 }
 
+button:hover .anim-svg,
 button:hover .pen {
-    transform: scale(125%);
+  transform: scale(1.15);
 }
 
 .nuke-btn {
-    position: absolute;
-    right: 2%;
-    bottom: 2%;
-    border-radius: 50%;
-    width: 3rem;
-    height: 3rem;
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  padding: 0.6rem;
+  border-radius: 50%;
 }
 
 button .nuke {
-    width: 100%;
-    height: 100%;
-    transition: transform 0.3s ease;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.3s ease;
 }
 
 button:hover .nuke {
-    transform: scale(125%);
+  transform: scale(1.15);
 }

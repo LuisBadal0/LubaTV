@@ -68,14 +68,13 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
 
   setDownloadGradient(progress: number) {
     let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
-    let background = `linear-gradient(to right, green ${progress}%, #343a40 ${progress}%)`;
+    let background = `linear-gradient(to right, rgba(34, 197, 94, 0.32) ${progress}%, var(--lt-surface) ${progress}%)`;
     this.renderer.setStyle(element, "background", background);
   }
 
   clearDownloadGradient() {
     let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
-    let background = "#343a40";
-    this.renderer.setStyle(element, "background", background);
+    this.renderer.removeStyle(element, "background");
   }
 
   async click(record = false) {

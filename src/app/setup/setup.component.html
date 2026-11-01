@@ -1,28 +1,36 @@
-<svg *ngIf="memory.AddingAdditionalSource" (click)="goBack()" class="arrow" fill="currentColor" viewBox="0 0 24 24">
-    <path
-        d="M2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12M18,11H10L13.5,7.5L12.08,6.08L6.16,12L12.08,17.92L13.5,16.5L10,13H18V11Z" />
-</svg>
-<div class="container mt-5">
+<button type="button" *ngIf="memory.AddingAdditionalSource" (click)="goBack()" class="lt-icon-btn arrow" title="Back">
+    <svg viewBox="0 0 24 24">
+        <path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" />
+    </svg>
+</button>
+<div class="container setup-page">
     <ng-container *ngIf="!loading">
-        <h2 class="text-center" *ngIf="!memory.AddingAdditionalSource">Let's add your first source</h2>
-        <h2 class="text-center" *ngIf="memory.AddingAdditionalSource">Let's add another source</h2>
-        <div class="btn-group mx-auto mb-4 mt-4" style="width: fit-content; display: block;">
-            <button (click)="switchMode(sourceTypeEnum.M3U)" class="btn btn-secondary"
-                [ngbTooltip]="'Use this option if you only have an M3U file. If the file was obtained through an URL given to you by your IPTV provider, the M3U URL option is better'"
-                triggers="hover" [ngClass]="{'active': source.source_type == sourceTypeEnum.M3U}">M3U File</button>
-            <button (click)="switchMode(sourceTypeEnum.M3ULink)" class="btn btn-secondary"
-                [ngbTooltip]="'If you want to have the option to automatically refresh your channels list with new channels that gets added by your IPTV Provider, this option is recommended over the M3U File'"
-                triggers="hover" [ngClass]="{'active': source.source_type == sourceTypeEnum.M3ULink}">M3U URL</button>
-            <button (click)="switchMode(sourceTypeEnum.Xtream)" class="btn btn-secondary"
-                [ngClass]="{'active': source.source_type == sourceTypeEnum.Xtream}">Xtream</button>
-            <button class="btn btn-secondary" (click)="switchMode(sourceTypeEnum.Custom)"
-                [ngClass]="{'active': source.source_type == sourceTypeEnum.Custom}">Custom</button>
-            <button class="btn btn-secondary" (click)="switchMode(sourceTypeEnum.CustomImport)"
-                [ngClass]="{'active': source.source_type == sourceTypeEnum.CustomImport}">Custom Import</button>
+        <div class="setup-hero">
+            <img src="assets/brand/lubatv-icon.svg" alt="" />
+            <h1 *ngIf="!memory.AddingAdditionalSource">Welcome to Luba<span class="lt-brand-accent">TV</span></h1>
+            <h1 *ngIf="memory.AddingAdditionalSource">Add another source</h1>
+            <p *ngIf="!memory.AddingAdditionalSource">Let's add your first source to start watching.</p>
+            <p *ngIf="memory.AddingAdditionalSource">Pick how you'd like to import it.</p>
         </div>
-        <form name="setupForm" #form="ngForm" (ngSubmit)="submit()">
-            <div class="row mt-2 justify-content-center">
-                <div class="col-lg-6 col-md-8">
+        <div class="setup-types">
+            <div class="btn-group lt-segmented">
+                <button (click)="switchMode(sourceTypeEnum.M3U)" class="btn"
+                    [ngbTooltip]="'Use this option if you only have an M3U file. If the file was obtained through an URL given to you by your IPTV provider, the M3U URL option is better'"
+                    triggers="hover" [ngClass]="{'active': source.source_type == sourceTypeEnum.M3U}">M3U File</button>
+                <button (click)="switchMode(sourceTypeEnum.M3ULink)" class="btn"
+                    [ngbTooltip]="'If you want to have the option to automatically refresh your channels list with new channels that gets added by your IPTV Provider, this option is recommended over the M3U File'"
+                    triggers="hover" [ngClass]="{'active': source.source_type == sourceTypeEnum.M3ULink}">M3U URL</button>
+                <button (click)="switchMode(sourceTypeEnum.Xtream)" class="btn"
+                    [ngClass]="{'active': source.source_type == sourceTypeEnum.Xtream}">Xtream</button>
+                <button class="btn" (click)="switchMode(sourceTypeEnum.Custom)"
+                    [ngClass]="{'active': source.source_type == sourceTypeEnum.Custom}">Custom</button>
+                <button class="btn" (click)="switchMode(sourceTypeEnum.CustomImport)"
+                    [ngClass]="{'active': source.source_type == sourceTypeEnum.CustomImport}">Custom Import</button>
+            </div>
+        </div>
+        <form name="setupForm" class="lt-card setup-form" #form="ngForm" (ngSubmit)="submit()">
+            <div class="row justify-content-center">
+                <div class="col-12">
                     <input tabindex="0" autocomplete="off" #name="ngModel"
                         [emptyDisabled]="source.source_type == sourceTypeEnum.CustomImport" source-name-exists
                         name="name" empty class="form-control" [(ngModel)]="source.name"
@@ -30,14 +38,14 @@
                 </div>
             </div>
             <div *ngIf="name.errors?.['sourceNameExists']" class="row mt-1 ps-3">
-                <div class="col-lg-6 col-md-8 text-danger text-center">
+                <div class="col-12 text-danger text-center">
                     This source name is already taken
                 </div>
             </div>
             <div
                 *ngIf="source.source_type != sourceTypeEnum.M3U && source.source_type != sourceTypeEnum.Custom && source.source_type != sourceTypeEnum.CustomImport">
                 <div class="row justify-content-center mt-2">
-                    <div class="col-lg-6 col-md-8">
+                    <div class="col-12">
                         <input autocomplete="off" name="url" empty class="form-control" [(ngModel)]="source.url"
                             placeholder="URL">
                     </div>
@@ -45,7 +53,7 @@
             </div>
             <div *ngIf="source.source_type == sourceTypeEnum.M3ULink || source.source_type == sourceTypeEnum.Xtream"
                 class="row mt-2 justify-content-center">
-                <div class="col-lg-6 col-md-8">
+                <div class="col-12">
                     <input autocomplete="off" name="user-agent" class="form-control" [(ngModel)]="source.user_agent"
                         placeholder="User-Agent (optional)">
                 </div>
@@ -53,7 +61,7 @@
 
             <div *ngIf="source.source_type == sourceTypeEnum.M3U || source.source_type == sourceTypeEnum.M3ULink"
                 class="row mt-2 justify-content-center">
-                <div class="col-lg-6 col-md-8">
+                <div class="col-12">
                     <div class="form-check form-switch">
                         <input name="use-tvg-id" [(ngModel)]="source.use_tvg_id" id="use-tvg-id"
                             class="form-check-input" type="checkbox">
@@ -64,13 +72,13 @@
             </div>
             <div *ngIf="source.source_type == sourceTypeEnum.Xtream">
                 <div class="row mt-2 justify-content-center">
-                    <div class="col-lg-6 col-md-8">
+                    <div class="col-12">
                         <input autocomplete="off" name="username" empty class="form-control"
                             [(ngModel)]="source.username" placeholder="Username">
                     </div>
                 </div>
                 <div class="row mt-2 justify-content-center">
-                    <div class="col-lg-6 col-md-8">
+                    <div class="col-12">
                         <input autocomplete="off" name="password" empty class="form-control"
                             [(ngModel)]="source.password" placeholder="Password">
                     </div>

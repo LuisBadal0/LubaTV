@@ -10,5 +10,5 @@ button:hover .import {
 
 .notice {
     font-size: 0.9rem;
-    color: lightgray;
+    color: var(--lt-text-muted);
 }

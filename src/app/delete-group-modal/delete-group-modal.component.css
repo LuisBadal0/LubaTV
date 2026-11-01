@@ -1,6 +1,6 @@
 .text-small {
     font-size: 0.85rem;
-    color: lightgray;
+    color: var(--lt-text-muted);
 }
 
 .error {
@@ -34,5 +34,5 @@ button:hover .trash-lid {
 
 .notice {
     font-size: 0.9rem;
-    color: lightgray;
+    color: var(--lt-text-muted);
 }
