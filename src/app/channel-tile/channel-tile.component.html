@@ -5,7 +5,7 @@
   (contextmenu)="onRightClick($event)">
   <div class="image-container">
     <img (error)="showImage = false" class="channel-image" *ngIf="channel?.image && showImage"
-      src="{{ channel?.image }}" />
+      loading="lazy" decoding="async" src="{{ channel?.image }}" />
     <span class="image-fallback" *ngIf="!channel?.image || !showImage" aria-hidden="true">{{
       channel?.name?.charAt(0) }}</span>
   </div>
