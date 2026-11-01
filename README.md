@@ -86,17 +86,17 @@ Installers ship mpv, ffmpeg and yt-dlp in a `deps` folder next to the app. Devel
 ./scripts/fetch-windows-deps.ps1
 ```
 
-The script copies the files from an installed LubaTV or Fred TV if it finds one, and otherwise downloads the same builds the release workflow uses. `-Download` forces a download, and `-Force` replaces existing files. The folder is git-ignored because the binaries are large. An mpv found on your `PATH` is still used first.
+The script copies the files from an installed LubaTV if it finds one, and otherwise downloads the same builds the release workflow uses. `-Download` forces a download, and `-Force` replaces existing files. The folder is git-ignored because the binaries are large. An mpv found on your `PATH` is still used first.
 
 ## Where LubaTV keeps its data
 
-LubaTV keeps Open TV's data folders, so an existing Open TV / Fred TV library carries over.
-
 | | Database | Logs |
 |---|---|---|
-| Windows | `%APPDATA%\fredol\open-tv\data` | `%LOCALAPPDATA%\fredol\open-tv\cache\logs` |
-| Linux | `~/.local/share/open-tv` | `~/.cache/open-tv/logs` |
-| macOS | `~/Library/Application Support/dev.fredol.open-tv` | `~/Library/Caches/dev.fredol.open-tv/logs` |
+| Windows | `%APPDATA%\luisbadalo\lubatv\data` | `%LOCALAPPDATA%\luisbadalo\lubatv\cache\logs` |
+| Linux | `~/.local/share/lubatv` | `~/.cache/lubatv/logs` |
+| macOS | `~/Library/Application Support/dev.luisbadalo.lubatv` | `~/Library/Caches/dev.luisbadalo.lubatv/logs` |
+
+The first time LubaTV starts, it copies the database from the app it was forked from, if that is installed, so your sources, favorites and settings carry over. Files exported from it (`.otv`, `.otvg`, `.otvp`, `.otvf`) still import; LubaTV exports `.ltv`, `.ltvg`, `.ltvp` and `.ltvf`.
 
 If something stays broken after an update, **Settings → Delete everything** resets the app.
 
@@ -104,10 +104,10 @@ If something stays broken after an update, **Settings → Delete everything** re
 
 LubaTV has no accounts, analytics or telemetry. It connects to the IPTV sources you add, the stream and logo addresses they list, and, when you re-stream, to [ipify](https://www.ipify.org/) to find your public IP address for the share link.
 
-## Fork notice
+## Credits
 
-LubaTV is a fork of [Open TV](https://github.com/Fredolx/open-tv) (also released as Fred TV) by Frédéric Lachapelle. It is independent and not affiliated with or endorsed by the Open TV project. Thanks to its author for the original work.
+LubaTV is made by [Luís Badalo](https://github.com/LuisBadal0), starting from a fork of the original app by [Frédéric Lachapelle](https://github.com/Fredolx). It is developed independently.
 
 ## License
 
-[GPL-2.0](LICENSE), as inherited from Open TV.
+[GPL-2.0](LICENSE).

@@ -6,12 +6,12 @@
   Installers ship these in a "deps" folder next to the app. Debug builds (npm run tauri dev)
   look in src-tauri/deps instead, which is git-ignored because the binaries are large.
 
-  By default the files are copied from an installed LubaTV or Fred TV, if one is found.
+  By default the files are copied from an installed LubaTV, if one is found.
   Otherwise, or with -Download, they are downloaded from the same sources the release
   workflow uses (.github/workflows/buildAndUpload.yml).
 
 .PARAMETER From
-  Copy from this folder (for example "C:\Program Files\Fred TV\deps").
+  Copy from this folder (for example "C:\Program Files\LubaTV\deps").
 
 .PARAMETER Download
   Download fresh builds even if an installed copy exists.
@@ -115,8 +115,7 @@ if ($From) {
   Get-Downloads
 } else {
   $installed = @(
-    (Join-Path $env:ProgramFiles "LubaTV\deps"),
-    (Join-Path $env:ProgramFiles "Fred TV\deps")
+    (Join-Path $env:ProgramFiles "LubaTV\deps")
   ) | Where-Object { Test-Path $_ } | Select-Object -First 1
   if ($installed) { Copy-FromFolder $installed } else { Get-Downloads }
 }

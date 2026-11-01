@@ -1,14 +1,14 @@
 ---
 name: Bug report
-about: Create a report to help Fred TV improve
+about: Report a problem with LubaTV
 title: "[BUG]"
 labels: ''
-assignees: Fredolx
+assignees: LuisBadal0
 
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is. If it's a complex bug, please provide step-by-step instructions to reproduce it. Feel free to mail your playlist with credentials to my e-mail if it's a parsing issue: frederic.lachapelle7@gmail.com
+A clear and concise description of what the bug is. If it's a complex bug, please provide step-by-step instructions to reproduce it. Please remove credentials from any playlist or log you share.
 
 **Screenshots/Videos**
 If applicable, add screenshots/videos to help explain your problem.

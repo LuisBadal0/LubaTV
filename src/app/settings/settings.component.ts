@@ -10,6 +10,7 @@ import { ViewMode } from "../models/viewMode";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { ConfirmDeleteModalComponent } from "../confirm-delete-modal/confirm-delete-modal.component";
 import { SORT_TYPES, SortType, getSortTypeText } from "../models/sortType";
+import { getVersion } from "@tauri-apps/api/app";
 
 @Component({
   selector: "app-settings",
@@ -35,13 +36,18 @@ export class SettingsComponent {
   expiries: Record<number, number> = {};
   sortTypes = SORT_TYPES;
   @ViewChild("mpvParams") mpvParams!: ElementRef;
+  appVersion?: string;
 
   constructor(
     private router: Router,
     public memory: MemoryService,
     private nav: Router,
     private modal: NgbModal,
-  ) { }
+  ) {
+    getVersion()
+      .then((version) => (this.appVersion = version))
+      .catch(() => {});
+  }
 
   _getSortTypeText(sortType: SortType) {
     return getSortTypeText(sortType);

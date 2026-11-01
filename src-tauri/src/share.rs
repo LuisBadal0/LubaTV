@@ -54,9 +54,10 @@ pub fn import(path: String, source_id: Option<i64>, name_override: Option<String
         .last()
         .context("Invalid path, no extension")?
     {
-        "otv" => import_channel(data, source_id.context("No source id")?, name_override),
-        "otvg" => import_group(data, source_id.context("No source id")?, name_override),
-        "otvp" => import_playlist(data, name_override),
+        // .otv* files were exported before the rename; keep importing them.
+        "ltv" | "otv" => import_channel(data, source_id.context("No source id")?, name_override),
+        "ltvg" | "otvg" => import_group(data, source_id.context("No source id")?, name_override),
+        "ltvp" | "otvp" => import_playlist(data, name_override),
         _ => Err(anyhow::anyhow!("Invalid path")),
     }
 }

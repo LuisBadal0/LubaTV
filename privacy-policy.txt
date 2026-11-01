@@ -1,12 +1,10 @@
 Privacy Policy
 
-Lachapelle Software is committed to ensuring the privacy and security of our users' personal information. 
-This Privacy Policy outlines how we collect, use, and protect the information you provide when using our mobile application.
+LubaTV does not collect, store or share any personal information.
 
-Information Collection:
+The app has no accounts, analytics or telemetry. Your sources, favorites and settings are
+stored only on your device.
 
-We do not collect any personally identifiable information about you.
-
-Usage of Information:
-
-Since we do not collect any personal information, we do not use, store, or disclose any information about you.
+LubaTV connects to the IPTV sources you add and to the stream and logo addresses they list.
+When you re-stream a channel, it also asks ipify (api.ipify.org) for your public IP address
+to build the share link.

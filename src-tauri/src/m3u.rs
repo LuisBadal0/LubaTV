@@ -193,7 +193,7 @@ pub async fn get_m3u8_from_link(source: Source, wipe: bool) -> Result<()> {
 }
 
 fn get_tmp_path() -> String {
-    let mut path = directories::ProjectDirs::from("dev", "fredol", "open-tv")
+    let mut path = crate::utils::project_dirs()
         .unwrap()
         .cache_dir()
         .to_owned();

@@ -1,39 +1,24 @@
 <div class="modal-header">
-  <h4 class="modal-title lbl">What's new in v{{ memory.AppVersion }}</h4>
+  <h4 class="modal-title lbl">Welcome to LubaTV v{{ memory.AppVersion }}</h4>
 </div>
 <div class="modal-body">
   <p>
-    Fred TV is in crucial need of your help. Consider donating any amount (even 1$, it makes a big
-    difference!) to support future development.
-    <a href="https://github.com/Fredolx/open-tv/discussions/69" target="_blank">Click here for more information.</a>
+    If you used this app before under its previous name, your sources, favorites and settings
+    have been carried over.
   </p>
   <br />
-  <p>
-    If you'd like to follow updates about Fred TV and related projects, I made a bluesky!
-    <a href="https://bsky.app/profile/fredoldev.bsky.social" target="_blank">You can follow me here.</a>
-  </p>
-  <br />
-  <h3>Changes</h3>
+  <h3>What's new</h3>
   <ul>
-    <li>Fixed catchup download/play erroring out</li>
-    <li>Fixed creating new custom channels erroring out</li>
-    <li>Fixed favorites not showing up in hidden view</li>
-    <li>Improved linux support</li>
-    <li>Fixed tag search icon</li>
-    <li>Fixed hidden categories not persisting on refresh</li>
-    <li>Added bulk operations in search bar</li>
-  </ul>
-  <h3>Upcoming improvements</h3>
-  <ul>
-    <li>Recording scheduling</li>
-    <li>Your idea here!</li>
+    <li>A new look: dark theme, redesigned home, settings and setup screens, and a new icon</li>
+    <li>Smoother scrolling through long channel lists</li>
+    <li>Search keeps working while a source refreshes</li>
+    <li>Long lists keep loading past 9,000 items</li>
+    <li>Clearer errors when the player can't start</li>
+    <li>Exports now use .ltv files; older .otv exports still import</li>
   </ul>
 </div>
 <div class="modal-footer">
-  <button class="btn btn-primary" (click)="openDonate()">
-    <span>Donate</span>
-  </button>
-  <button class="btn btn-secondary ml-2" (click)="close()">
-    <span>Don't show again</span>
+  <button class="btn btn-primary" (click)="close()">
+    <span>Get started</span>
   </button>
 </div>

@@ -36,14 +36,21 @@
   margin: 3rem 0 2rem;
   text-align: center;
   font-size: 0.9rem;
-}
-
-.author a {
   color: var(--lt-text-subtle);
 }
 
-.author a:hover {
+.author .app-version {
+  margin-bottom: 0.35rem;
+  font-weight: 600;
   color: var(--lt-text-muted);
+}
+
+.author a {
+  color: var(--lt-text-muted);
+}
+
+.author a:hover {
+  color: var(--lt-text);
 }
 
 .btn.disabled {

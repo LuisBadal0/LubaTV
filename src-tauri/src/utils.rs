@@ -35,7 +35,7 @@ const MACOS_POTENTIAL_PATHS: [&str; 3] = [
     "/usr/local/bin",    // Homebrew on AMD64 Mac
 ];
 
-const DEFAULT_USER_AGENT: &str = "Fred TV";
+const DEFAULT_USER_AGENT: &str = "LubaTV";
 
 static ILLEGAL_CHARS_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"[<>:"/\\|?*\x00-\x1F]"#).unwrap());
@@ -344,8 +344,53 @@ pub fn create_nuke_request() -> Result<()> {
     std::process::exit(0);
 }
 
+/// LubaTV's data, cache and log folders.
+pub fn project_dirs() -> Result<ProjectDirs> {
+    ProjectDirs::from("dev", "luisbadalo", "lubatv").context("project dir not found")
+}
+
+/// Copies the database from the folders the app used before it was renamed, the first time
+/// LubaTV starts, so sources, favorites and settings carry over. Runs only while LubaTV's own
+/// data folder does not exist yet, so "Delete everything" never brings the old data back.
+pub fn migrate_legacy_data() -> Result<()> {
+    let data_dir = project_dirs()?.data_dir().to_owned();
+    if data_dir.exists() {
+        return Ok(());
+    }
+    let Some(legacy) = ProjectDirs::from("dev", "fredol", "open-tv") else {
+        return Ok(());
+    };
+    copy_legacy_database(legacy.data_dir(), &data_dir)
+}
+
+/// Copies the database (and its WAL files) from `legacy_dir` into a new `data_dir`.
+/// Does nothing when `data_dir` already exists or there is no legacy database.
+fn copy_legacy_database(legacy_dir: &Path, data_dir: &Path) -> Result<()> {
+    if data_dir.exists() || !legacy_dir.join(sql::DB_NAME).exists() {
+        return Ok(());
+    }
+    std::fs::create_dir_all(data_dir)?;
+    let copied = (|| -> Result<()> {
+        for suffix in ["", "-wal", "-shm"] {
+            let name = format!("{}{}", sql::DB_NAME, suffix);
+            let from = legacy_dir.join(&name);
+            if from.exists() {
+                std::fs::copy(&from, data_dir.join(&name))?;
+            }
+        }
+        Ok(())
+    })();
+    if let Err(e) = copied {
+        // Leave no half-copied database behind, so the next start tries again.
+        _ = std::fs::remove_dir_all(data_dir);
+        return Err(e);
+    }
+    log(format!("Copied data from {}", legacy_dir.display()));
+    Ok(())
+}
+
 fn get_nuke_path() -> Result<PathBuf> {
-    let path = ProjectDirs::from("dev", "fredol", "open-tv").context("project dir not found")?;
+    let path = project_dirs()?;
     let path = path.cache_dir();
     let path = path.join("nuke.txt");
     Ok(path)
@@ -357,7 +402,7 @@ pub fn check_nuke() -> Result<()> {
         return Ok(());
     }
     std::fs::remove_file(path)?;
-    let path = ProjectDirs::from("dev", "fredol", "open-tv").context("project dir not found")?;
+    let path = project_dirs()?;
     let data_dir = path.data_dir();
     // Remove the WAL sidecars too, so a stale log is never replayed into the new database
     for name in [
@@ -384,7 +429,35 @@ pub fn get_user_agent_from_source(source: &Source) -> Result<String> {
 
 #[cfg(test)]
 mod test_utils {
-    use super::{get_bin_from_deps, sanitize};
+    use super::{copy_legacy_database, get_bin_from_deps, sanitize};
+    use crate::sql::DB_NAME;
+
+    #[test]
+    fn test_copy_legacy_database() {
+        let root = std::env::temp_dir().join(format!("lubatv-migrate-{}", std::process::id()));
+        let legacy = root.join("legacy");
+        let data = root.join("data");
+        std::fs::create_dir_all(&legacy).unwrap();
+        std::fs::write(legacy.join(DB_NAME), b"db").unwrap();
+        std::fs::write(legacy.join(format!("{DB_NAME}-wal")), b"wal").unwrap();
+
+        copy_legacy_database(&legacy, &data).unwrap();
+        assert_eq!(std::fs::read(data.join(DB_NAME)).unwrap(), b"db");
+        assert_eq!(std::fs::read(data.join(format!("{DB_NAME}-wal"))).unwrap(), b"wal");
+        assert!(!data.join(format!("{DB_NAME}-shm")).exists());
+
+        // Once LubaTV has its own folder (e.g. after "Delete everything"), never copy again.
+        std::fs::remove_file(data.join(DB_NAME)).unwrap();
+        copy_legacy_database(&legacy, &data).unwrap();
+        assert!(!data.join(DB_NAME).exists());
+
+        // No legacy database: nothing is created.
+        let fresh = root.join("fresh");
+        copy_legacy_database(&root.join("missing"), &fresh).unwrap();
+        assert!(!fresh.exists());
+
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn test_dev_deps_dir() {

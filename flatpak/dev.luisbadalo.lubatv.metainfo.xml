@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <id>dev.luisbadalo.lubatv</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0</project_license>
+  <name>LubaTV</name>
+  <summary>A fast, keyboard-friendly IPTV player</summary>
+  <content_rating type="oars-1.1" />
+  <branding>
+    <color type="primary" scheme_preference="light">#8b5cf6</color>
+    <color type="primary" scheme_preference="dark">#7c3aed</color>
+  </branding>
+  <description>
+    <p>LubaTV plays IPTV from M3U files, M3U links and Xtream accounts, with live TV, movies and series, instant search, favorites, EPG, catch-up, recording and re-streaming.</p>
+    <p>It can be driven entirely from the keyboard or a TV remote.</p>
+  </description>
+  <launchable type="desktop-id">dev.luisbadalo.lubatv.desktop</launchable>
+  <releases>
+    <release version="1.0.0" date="2026-11-01">
+      <description>
+        <p>First LubaTV release: new look and icon, smoother scrolling, search that keeps working during refreshes, and long lists that keep loading.</p>
+      </description>
+    </release>
+  </releases>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/LuisBadal0/LubaTV/main/screenshots/lubatv-home.png</image>
+      <caption>Home screen</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/LuisBadal0/LubaTV/main/screenshots/lubatv-settings.png</image>
+      <caption>Settings</caption>
+    </screenshot>
+  </screenshots>
+  <developer_name>Luís Badalo</developer_name>
+  <url type="homepage">https://github.com/LuisBadal0/LubaTV</url>
+  <url type="bugtracker">https://github.com/LuisBadal0/LubaTV/issues</url>
+</component>

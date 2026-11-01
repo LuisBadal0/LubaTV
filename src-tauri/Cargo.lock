@@ -2358,6 +2358,44 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
+name = "lubatv"
+version = "1.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "bytes",
+ "chrono",
+ "directories",
+ "futures",
+ "if-addrs",
+ "indexmap 2.12.1",
+ "log",
+ "r2d2",
+ "r2d2_sqlite",
+ "regex",
+ "reqwest",
+ "rusqlite",
+ "rusqlite_migration",
+ "serde",
+ "serde_json",
+ "shell-words",
+ "simplelog",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-dialog",
+ "tauri-plugin-notification",
+ "tauri-plugin-shell",
+ "tauri-plugin-single-instance",
+ "tokio",
+ "tokio-util",
+ "url",
+ "warp",
+ "which",
+ "winsplit",
+]
+
+[[package]]
 name = "mac"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2975,44 +3013,6 @@ dependencies = [
  "is-wsl",
  "libc",
  "pathdiff",
-]
-
-[[package]]
-name = "open_tv"
-version = "1.9.1"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "bytes",
- "chrono",
- "directories",
- "futures",
- "if-addrs",
- "indexmap 2.12.1",
- "log",
- "r2d2",
- "r2d2_sqlite",
- "regex",
- "reqwest",
- "rusqlite",
- "rusqlite_migration",
- "serde",
- "serde_json",
- "shell-words",
- "simplelog",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-dialog",
- "tauri-plugin-notification",
- "tauri-plugin-shell",
- "tauri-plugin-single-instance",
- "tokio",
- "tokio-util",
- "url",
- "warp",
- "which",
- "winsplit",
 ]
 
 [[package]]

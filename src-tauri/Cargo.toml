@@ -1,17 +1,17 @@
 [package]
-name = "open_tv"
-version = "1.9.1"
-description = "Fast And Powerful IPTV App"
-authors = ["Frédéric Lachapelle"]
-license = ""
-repository = ""
+name = "lubatv"
+version = "1.0.0"
+description = "A fast, keyboard-friendly IPTV player"
+authors = ["Luís Badalo"]
+license = "GPL-2.0"
+repository = "https://github.com/LuisBadal0/LubaTV"
 edition = "2024"
 rust-version = "1.91.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "open_tv_lib"
+name = "lubatv_lib"
 crate-type = ["staticlib", "cdylib", "lib"]
 
 [build-dependencies]
