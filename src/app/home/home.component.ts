@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   HostListener,
+  NgZone,
   OnDestroy,
   ViewChild,
 } from "@angular/core";
@@ -99,6 +100,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   loading = false;
   nodeStack: Stack = new Stack();
   showScrollTop = false;
+  hasXtream = false;
+  private scrollFrame = 0;
 
   scrollToTop() {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -110,8 +113,14 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     public toast: ToastrService,
     private error: ErrorService,
     private modal: NgbModal,
+    private zone: NgZone,
   ) {
     this.getSources();
+  }
+
+  /** Keeps tiles (and their DOM, logos and state) when a reload returns the same items. */
+  trackChannel(_: number, channel: Channel) {
+    return `${channel.media_type}-${channel.id}`;
   }
 
   getSources() {
@@ -165,7 +174,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
             this.memory.Sort.next([settings.default_sort, false]);
             this.filters.sort = settings.default_sort;
           }
-          this.chkSerie = this.anyXtream();
+          this.hasXtream = this.anyXtream();
+          this.chkSerie = this.hasXtream;
           if (settings.refresh_on_start === true && !sessionStorage.getItem("refreshedOnStart")) {
             sessionStorage.setItem("refreshedOnStart", "true");
             this.refreshOnStart().then((_) => _);
@@ -285,29 +295,34 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.loading = false;
   }
 
-  checkScrollTop() {
-    const scrollPosition =
-      window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    this.showScrollTop = scrollPosition > 300;
-  }
-
-  async checkScrollEnd() {
-    if (this.reachedMax === true || this.loading === true) return;
-    const scrollHeight = document.documentElement.scrollHeight;
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const clientHeight = window.innerHeight || document.documentElement.clientHeight;
-    if (scrollTop + clientHeight >= scrollHeight * 0.75) {
-      await this.loadMore();
-    }
-  }
-
-  @HostListener("window:scroll", ["$event"])
-  async scroll(event: any) {
-    this.checkScrollTop();
-    await this.checkScrollEnd();
-  }
+  /**
+   * Scroll events fire many times per frame. They are handled outside Angular's zone and
+   * coalesced to one check per animation frame; change detection only runs when the
+   * back-to-top button toggles or the next page needs loading.
+   */
+  private onScroll = () => {
+    if (this.scrollFrame) return;
+    this.scrollFrame = requestAnimationFrame(() => {
+      this.scrollFrame = 0;
+      const root = document.documentElement;
+      const scrollTop = window.scrollY || root.scrollTop || 0;
+      const showScrollTop = scrollTop > 300;
+      const nearEnd =
+        !this.reachedMax &&
+        !this.loading &&
+        scrollTop + (window.innerHeight || root.clientHeight) >= root.scrollHeight * 0.75;
+      if (showScrollTop === this.showScrollTop && !nearEnd) return;
+      this.zone.run(() => {
+        this.showScrollTop = showScrollTop;
+        if (nearEnd) this.loadMore();
+      });
+    });
+  };
 
   ngAfterViewInit(): void {
+    this.zone.runOutsideAngular(() =>
+      window.addEventListener("scroll", this.onScroll, { passive: true }),
+    );
     this.addEvents().then((_) => _);
     this.subscriptions.push(
       fromEvent(this.search.nativeElement, "keyup")
@@ -630,6 +645,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    window.removeEventListener("scroll", this.onScroll);
+    cancelAnimationFrame(this.scrollFrame);
     this.subscriptions.forEach((x) => x.unsubscribe());
   }
 

@@ -1,10 +1,14 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   ElementRef,
   Input,
+  OnChanges,
   OnDestroy,
   Renderer2,
+  SimpleChanges,
   ViewChild,
 } from "@angular/core";
 import { MatMenuTrigger } from "@angular/material/menu";
@@ -36,8 +40,11 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
   selector: "app-channel-tile",
   templateUrl: "./channel-tile.component.html",
   styleUrl: "./channel-tile.component.css",
+  // Tiles only re-render when their inputs change, on their own events, or via markForCheck
+  // after async work, instead of on every change detection pass of the whole grid.
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChannelTileComponent implements OnDestroy, AfterViewInit {
+export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit {
   constructor(
     public memory: MemoryService,
     private toastr: ToastrService,
@@ -46,6 +53,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
     private el: ElementRef,
     private renderer: Renderer2,
     private download: DownloadService,
+    private cdr: ChangeDetectorRef,
   ) { }
   @Input() channel?: Channel;
   @Input() id!: number;
@@ -61,6 +69,16 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
   viewModeEnum = ViewMode;
   subscriptions: Subscription[] = [];
   fade = false;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Tiles are reused across reloads (trackBy), so reset per-item display state when
+    // fresh data arrives, as a newly created tile would have it.
+    const channel = changes["channel"];
+    if (channel && !channel.firstChange) {
+      this.fade = false;
+      this.showImage = true;
+    }
+  }
 
   ngAfterViewInit(): void {
     this.getExistingDownload();
@@ -124,6 +142,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
       if (!file) return;
     }
     this.starting = true;
+    this.cdr.markForCheck();
     this.memory.SetFocus.next(this.id);
     try {
       await invoke("play", { channel: this.channel, record: record, recordPath: file });
@@ -135,6 +154,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
       this.error.handleError(e);
     });
     this.starting = false;
+    this.cdr.markForCheck();
   }
 
   onRightClick(event: MouseEvent) {
@@ -174,6 +194,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
           this.fade = false;
         this.toastr.success(msg);
       }
+      this.cdr.markForCheck();
     } catch (e) {
       this.error.handleError(e, `Failed to add/remove "${this.channel?.name}" to/from favorites`);
     }
@@ -204,6 +225,7 @@ export class ChannelTileComponent implements OnDestroy, AfterViewInit {
       await invoke(command, args);
       this.channel!.hidden = hide;
       this.fade = this.viewMode == ViewMode.Hidden ? !hide : hide;
+      this.cdr.markForCheck();
       this.toastr.success(`${msg} (updates on reload)`);
     } catch (e) {
       this.error.handleError(e, `Failed to hide/unhide "${this.channel?.name}"`);
