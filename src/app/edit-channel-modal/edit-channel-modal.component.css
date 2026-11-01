@@ -1,6 +1,6 @@
 .text-small {
     font-size: 0.85rem;
-    color: lightgray;
+    color: var(--lt-text-muted);
 }
 
 .error {

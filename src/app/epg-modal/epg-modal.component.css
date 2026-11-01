@@ -1,12 +1,14 @@
 .epg-item {
-  border-radius: 0.25rem;
-  background-color: #343a40;
+  background-color: var(--lt-surface);
+  border: 1px solid var(--lt-border);
+  border-radius: var(--lt-radius) !important;
   width: 100%;
   padding: 1rem;
   position: relative;
 }
 
 .arrow {
+  color: var(--lt-accent);
   width: 3rem;
   height: 3rem;
   cursor: pointer;

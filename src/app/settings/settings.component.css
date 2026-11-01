@@ -1,73 +1,72 @@
-.arrow {
-    position: absolute;
-    top: 2%;
-    left: 2%;
-    width: 2.5rem;
-    height: 2.5rem;
-    cursor: pointer;
-    transition: transform 0.3s ease;
+.settings-page {
+  max-width: 960px;
+  padding-bottom: 2rem;
 }
 
-.arrow:hover {
-    transform: scale(125%);
+.settings-card {
+  padding: 0.25rem 1.5rem;
+}
+
+.settings-card > .row {
+  margin-top: 0 !important;
+  padding: 0.9rem 0;
+}
+
+.settings-card > .row + .row {
+  border-top: 1px solid var(--lt-border);
+}
+
+.settings-card .col-4 {
+  color: var(--lt-text);
+  font-size: 0.95rem;
+}
+
+.settings-card [ngbTooltip],
+.settings-card label {
+  cursor: help;
+}
+
+.settings-card .selectable {
+  color: var(--lt-text-muted);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.85rem;
 }
 
 .author {
-    text-align: center;
-    font-size: 1rem;
+  margin: 3rem 0 2rem;
+  text-align: center;
+  font-size: 0.9rem;
 }
 
-a {
-    text-decoration: none;
+.author a {
+  color: var(--lt-text-subtle);
+}
+
+.author a:hover {
+  color: var(--lt-text-muted);
 }
 
 .btn.disabled {
-    pointer-events: auto !important;
+  pointer-events: auto !important;
 }
 
-button .refresh {
-    display: inline;
-    height: 1.5rem;
-    width: 1.5rem;
-    transition: transform 0.3s ease;
-  }
-  
-  button:hover .refresh {
-    transform: rotate(360deg);
-  }
-
-button .plus {
-    width: 1.5rem;
-    height: 1.5rem;
-    transition: transform 0.3s ease;
+.btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.3s ease;
 }
 
-button:hover .plus {
-    transform: scale(125%);
+.btn:hover .refresh,
+.btn:hover .history {
+  transform: rotate(-360deg);
 }
 
-button .nuke {
-    width: 1.5rem;
-    height: 1.5rem;
-    transition: transform 0.3s ease;
-}
-
-button:hover .nuke {
-    transform: scale(125%);
-}
-
-button .history {
-    width: 1.5rem;
-    height: 1.5rem;
-    transition: transform 0.3s ease;
-}
-
-button:hover .history {
-    transform: scale(125%);
+.btn:hover .plus,
+.btn:hover .nuke {
+  transform: scale(1.15);
 }
 
 .folder {
-    height: 1rem;
-    width: 1rem;
+  height: 1rem !important;
+  width: 1rem !important;
 }
-
