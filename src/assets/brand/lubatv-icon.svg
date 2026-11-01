@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5B5BF6"/>
+      <stop offset="0.55" stop-color="#8B3DF0"/>
+      <stop offset="1" stop-color="#E8467C"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.28" cy="0.18" r="0.75">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="play" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFE3F0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Squircle background -->
+  <rect x="32" y="32" width="960" height="960" rx="224" fill="url(#bg)"/>
+  <rect x="32" y="32" width="960" height="960" rx="224" fill="url(#glow)"/>
+
+  <!-- Antenna -->
+  <g stroke="#FFFFFF" stroke-width="44" stroke-linecap="round" fill="none">
+    <path d="M512 300 L408 196"/>
+    <path d="M512 300 L616 196"/>
+  </g>
+  <circle cx="408" cy="196" r="30" fill="#FFFFFF"/>
+  <circle cx="616" cy="196" r="30" fill="#FFFFFF"/>
+
+  <!-- Screen -->
+  <rect x="196" y="300" width="632" height="452" rx="96" fill="#FFFFFF" fill-opacity="0.14"/>
+  <rect x="196" y="300" width="632" height="452" rx="96" fill="none" stroke="#FFFFFF" stroke-width="52"/>
+
+  <!-- Play glyph (rounded triangle) -->
+  <path d="M458 432
+           C458 410 482 397 501 408
+           L630 492
+           C647 503 647 529 630 540
+           L501 624
+           C482 635 458 622 458 600 Z" fill="url(#play)"/>
+
+  <!-- Stand -->
+  <path d="M400 836 L624 836" stroke="#FFFFFF" stroke-width="48" stroke-linecap="round"/>
+</svg>
