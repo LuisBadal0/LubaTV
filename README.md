@@ -57,6 +57,15 @@ scoop install mpv ffmpeg yt-dlp # Windows
 choco install mpv ffmpeg yt-dlp # Windows alternative
 ```
 
+## Development on Windows
+Installers ship mpv, ffmpeg and yt-dlp in a `deps` folder next to the app. Development builds (`npm run tauri dev`) look in `src-tauri/deps` instead. Fill it once with:
+
+```
+./scripts/fetch-windows-deps.ps1
+```
+
+It copies the files from an installed LubaTV or Fred TV if it finds one, and otherwise downloads the same builds the release workflow uses (`-Download` forces a download, `-Force` replaces existing files). The folder is git-ignored because the binaries are large. An mpv found on your `PATH` is still used first.
+
 ## Docker
 You can install Fred TV using Docker. It wouldn't necessarily be the recommended way to install it, but it's now possible.
 You should always install Fred TV from either Releases or Flatpak on Linux.
