@@ -22,8 +22,8 @@ export class ImportModalComponent {
       multiple: false,
       directory: false,
       canCreateDirectories: false,
-      title: "Select Fred TV export file",
-      filters: [{ name: "extension", extensions: ["otv", "otvg"] }],
+      title: "Select a LubaTV export file",
+      filters: [{ name: "extension", extensions: ["ltv", "ltvg"] }],
     });
     if (file == null) {
       return;

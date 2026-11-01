@@ -6,12 +6,12 @@
   Installers ship these in a "deps" folder next to the app. Debug builds (npm run tauri dev)
   look in src-tauri/deps instead, which is git-ignored because the binaries are large.
 
-  By default the files are copied from an installed LubaTV or Fred TV, if one is found.
+  By default the files are copied from an installed LubaTV, if one is found.
   Otherwise, or with -Download, they are downloaded from the same sources the release
   workflow uses (.github/workflows/buildAndUpload.yml).
 
 .PARAMETER From
-  Copy from this folder (for example "C:\Program Files\Fred TV\deps").
+  Copy from this folder (for example "C:\Program Files\LubaTV\deps").
 
 .PARAMETER Download
   Download fresh builds even if an installed copy exists.
@@ -54,15 +54,29 @@ function Copy-FromFolder([string]$folder) {
   }
 }
 
-function Get-File([string]$url, [string]$outFile) {
+# Runs a web request up to 3 times, then rethrows the last error.
+function Invoke-WithRetry([scriptblock]$action) {
   for ($i = 1; $i -le 3; $i++) {
     try {
-      Invoke-WebRequest -UserAgent "Wget" -Uri $url -OutFile $outFile
-      return
+      return & $action
     } catch {
       if ($i -eq 3) { throw }
-      Start-Sleep -Seconds 5
+      Write-Host "  attempt $i failed ($($_.Exception.Message)); retrying..."
+      Start-Sleep -Seconds (5 * $i)
     }
+  }
+}
+
+function Get-File([string]$url, [string]$outFile) {
+  Invoke-WithRetry { Invoke-WebRequest -UserAgent "Wget" -Uri $url -OutFile $outFile }
+}
+
+function Copy-Found([string]$folder, [string[]]$names) {
+  foreach ($name in $names) {
+    $found = Get-ChildItem -Path $folder -Recurse -Filter $name | Select-Object -First 1
+    if (-not $found) { throw "$name not found in $folder" }
+    Copy-Item $found.FullName -Destination $dest -Force
+    Write-Host "Extracted $name"
   }
 }
 
@@ -70,15 +84,41 @@ function Expand-Files([string]$zip, [string[]]$names) {
   $tmp = Join-Path ([IO.Path]::GetTempPath()) ("lubatv-deps-" + [guid]::NewGuid())
   Expand-Archive -Path $zip -DestinationPath $tmp
   try {
-    foreach ($name in $names) {
-      $found = Get-ChildItem -Path $tmp -Recurse -Filter $name | Select-Object -First 1
-      if (-not $found) { throw "$name not found in $zip" }
-      Copy-Item $found.FullName -Destination $dest -Force
-      Write-Host "Extracted $name"
-    }
+    Copy-Found $tmp $names
   } finally {
     Remove-Item $tmp -Recurse -Force
   }
+}
+
+# mpv has no stable Windows release; use the latest build from its CI. nightly.link mirrors
+# the artifacts without sign-in but is sometimes unavailable (for example from GitHub Actions),
+# so fall back to downloading the artifact through the GitHub API with the gh CLI.
+function Get-Mpv([string]$work) {
+  $names = @("mpv.exe", "vulkan-1.dll")
+  try {
+    $page = Invoke-WithRetry {
+      Invoke-WebRequest -Uri "https://nightly.link/mpv-player/mpv/workflows/build/master" -UseBasicParsing
+    }
+    $url = $page.Links.Href | Where-Object { $_ -match "x86_64-pc-windows-msvc\.zip$" } | Select-Object -First 1
+    if (-not $url) { throw "no Windows build listed" }
+    $zip = Join-Path $work "mpv.zip"
+    Get-File $url $zip
+    Expand-Files $zip $names
+    return
+  } catch {
+    Write-Host "nightly.link failed ($($_.Exception.Message)); trying the GitHub API..."
+  }
+  if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+    throw "Could not download mpv: nightly.link failed and the GitHub CLI (gh) is not installed"
+  }
+  $run = gh run list -R mpv-player/mpv --workflow build.yml --branch master --status success --limit 1 --json databaseId --jq ".[0].databaseId"
+  if ($LASTEXITCODE -ne 0 -or -not $run) { throw "Could not find a successful mpv build" }
+  $artifact = gh api "repos/mpv-player/mpv/actions/runs/$run/artifacts?per_page=100" --jq '.artifacts[] | select(.name | test("x86_64-pc-windows-msvc$")) | .name' | Select-Object -First 1
+  if ($LASTEXITCODE -ne 0 -or -not $artifact) { throw "Could not find the mpv Windows artifact in run $run" }
+  $out = Join-Path $work "mpv-artifact"
+  gh run download $run -R mpv-player/mpv -n $artifact -D $out
+  if ($LASTEXITCODE -ne 0) { throw "Could not download mpv artifact $artifact" }
+  Copy-Found $out $names
 }
 
 function Get-Downloads {
@@ -87,12 +127,7 @@ function Get-Downloads {
   try {
     if ($missing -contains "mpv.exe" -or $missing -contains "vulkan-1.dll") {
       Write-Host "Downloading mpv (latest CI build)..."
-      $page = Invoke-WebRequest -Uri "https://nightly.link/mpv-player/mpv/workflows/build/master" -UseBasicParsing
-      $url = $page.Links.Href | Where-Object { $_ -match "x86_64-pc-windows-msvc\.zip$" } | Select-Object -First 1
-      if (-not $url) { throw "Could not find the mpv Windows build on nightly.link" }
-      $zip = Join-Path $work "mpv.zip"
-      Get-File $url $zip
-      Expand-Files $zip @("mpv.exe", "vulkan-1.dll")
+      Get-Mpv $work
     }
     if ($missing -contains "ffmpeg.exe") {
       Write-Host "Downloading ffmpeg (about 200 MB)..."
@@ -115,8 +150,7 @@ if ($From) {
   Get-Downloads
 } else {
   $installed = @(
-    (Join-Path $env:ProgramFiles "LubaTV\deps"),
-    (Join-Path $env:ProgramFiles "Fred TV\deps")
+    (Join-Path $env:ProgramFiles "LubaTV\deps")
   ) | Where-Object { Test-Path $_ } | Select-Object -First 1
   if ($installed) { Copy-FromFolder $installed } else { Get-Downloads }
 }

@@ -1,9 +1,9 @@
 {
-  "productName": "Fred TV",
-  "version": "1.9.1",
-  "identifier": "dev.fredol.open-tv",
+  "productName": "LubaTV",
+  "version": "1.0.0",
+  "identifier": "dev.luisbadalo.lubatv",
   "build": {
-    "frontendDist": "../dist/open-tv/browser",
+    "frontendDist": "../dist/lubatv/browser",
     "devUrl": "http://localhost:4200",
     "beforeDevCommand": "npm run start",
     "beforeBuildCommand": "ng build --configuration=production"
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "LubaTV (v1.9.1)",
+        "title": "LubaTV (v1.0.0)",
         "width": 1100,
         "height": 720,
         "minWidth": 480,

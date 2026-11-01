@@ -1,0 +1,10 @@
+[Desktop Entry]
+Categories=AudioVideo
+Comment=A fast, keyboard-friendly IPTV player
+Exec=lubatv
+Icon=dev.luisbadalo.lubatv
+Keywords=tv;iptv;lubatv;
+Name=LubaTV
+StartupWMClass=lubatv
+Terminal=false
+Type=Application

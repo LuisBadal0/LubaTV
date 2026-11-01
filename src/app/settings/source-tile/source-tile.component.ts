@@ -27,7 +27,7 @@ export class SourceTileComponent {
   sourceTypeEnum = SourceType;
   editing = false;
   editableSource: Source = {};
-  defaultUserAgent = "Fred TV";
+  defaultUserAgent = "LubaTV";
 
   constructor(
     public memory: MemoryService,
@@ -167,7 +167,7 @@ export class SourceTileComponent {
       title: "Select a favorites backup",
       directory: false,
       multiple: false,
-      filters: [{ name: "extension", extensions: ["otvf"] }],
+      filters: [{ name: "extension", extensions: ["ltvf"] }],
     });
     if (file) {
       await this.memory.tryIPC(

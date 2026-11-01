@@ -14,7 +14,6 @@ use crate::{
     view_type,
 };
 use anyhow::{Context, Result, anyhow};
-use directories::ProjectDirs;
 use r2d2::{Pool, PooledConnection};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::{OptionalExtension, Row, Transaction, params, params_from_iter};
@@ -50,7 +49,7 @@ fn page_offset(page: u32) -> u32 {
 }
 
 fn get_and_create_sqlite_db_path() -> String {
-    let mut path = ProjectDirs::from("dev", "fredol", "open-tv")
+    let mut path = crate::utils::project_dirs()
         .unwrap()
         .data_dir()
         .to_owned();

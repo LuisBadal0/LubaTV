@@ -1,5 +1,4 @@
 use chrono::Local;
-use directories::ProjectDirs;
 use std::{fs, sync::LazyLock};
 
 static USE_LOGGER: LazyLock<bool> = LazyLock::new(|| init_logger());
@@ -34,7 +33,7 @@ fn init_logger() -> bool {
 }
 
 fn get_and_create_log_path() -> String {
-    let mut path = ProjectDirs::from("dev", "fredol", "open-tv")
+    let mut path = crate::utils::project_dirs()
         .unwrap()
         .cache_dir()
         .to_owned();

@@ -35,7 +35,7 @@ const MACOS_POTENTIAL_PATHS: [&str; 3] = [
     "/usr/local/bin",    // Homebrew on AMD64 Mac
 ];
 
-const DEFAULT_USER_AGENT: &str = "Fred TV";
+const DEFAULT_USER_AGENT: &str = "LubaTV";
 
 static ILLEGAL_CHARS_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r#"[<>:"/\\|?*\x00-\x1F]"#).unwrap());
@@ -344,8 +344,13 @@ pub fn create_nuke_request() -> Result<()> {
     std::process::exit(0);
 }
 
+/// LubaTV's data, cache and log folders.
+pub fn project_dirs() -> Result<ProjectDirs> {
+    ProjectDirs::from("dev", "luisbadalo", "lubatv").context("project dir not found")
+}
+
 fn get_nuke_path() -> Result<PathBuf> {
-    let path = ProjectDirs::from("dev", "fredol", "open-tv").context("project dir not found")?;
+    let path = project_dirs()?;
     let path = path.cache_dir();
     let path = path.join("nuke.txt");
     Ok(path)
@@ -357,7 +362,7 @@ pub fn check_nuke() -> Result<()> {
         return Ok(());
     }
     std::fs::remove_file(path)?;
-    let path = ProjectDirs::from("dev", "fredol", "open-tv").context("project dir not found")?;
+    let path = project_dirs()?;
     let data_dir = path.data_dir();
     // Remove the WAL sidecars too, so a stale log is never replayed into the new database
     for name in [

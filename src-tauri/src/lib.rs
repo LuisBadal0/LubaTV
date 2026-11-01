@@ -21,6 +21,7 @@ use {
 
 pub mod bulk_action_type;
 pub mod epg;
+pub mod legacy;
 pub mod log;
 pub mod m3u;
 pub mod media_type;
@@ -76,6 +77,8 @@ pub fn run() {
             get_enabled_sources,
             toggle_source,
             delete_database,
+            get_legacy_data,
+            resolve_legacy_data,
             add_custom_channel,
             get_custom_channel_extra_data,
             edit_custom_channel,
@@ -323,6 +326,16 @@ fn toggle_source(value: bool, source_id: i64) -> Result<(), String> {
 #[tauri::command(async)]
 fn delete_database() -> Result<(), String> {
     utils::create_nuke_request().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_legacy_data() -> Result<Option<legacy::LegacyData>, String> {
+    legacy::pending().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn resolve_legacy_data(delete: bool) -> Result<(), String> {
+    legacy::resolve(delete).map_err(map_err_frontend)
 }
 
 #[tauri::command(async)]

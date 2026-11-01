@@ -1,0 +1,20 @@
+<div class="modal-header">
+  <h4 class="modal-title lbl">Your library came with you</h4>
+</div>
+<div class="modal-body">
+  <p>
+    LubaTV copied your sources, favorites and settings from the app it was forked from. That app's
+    data is still on this computer ({{ sizeText }}):
+  </p>
+  <ul class="folders">
+    <li *ngFor="let folder of legacy?.folders" class="selectable">{{ folder }}</li>
+  </ul>
+  <p>
+    Delete it if you no longer use that app. If you still use it, keep it: that app needs these
+    folders. Close it before deleting.
+  </p>
+</div>
+<div class="modal-footer">
+  <button [disabled]="busy" (click)="choose(false)" class="btn btn-secondary">Keep it</button>
+  <button [disabled]="busy" (click)="choose(true)" class="btn btn-danger">Delete old data</button>
+</div>

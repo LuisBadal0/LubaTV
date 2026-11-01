@@ -9,7 +9,7 @@ export class LoadingComponent implements OnInit, OnDestroy {
   @Input()
   center: boolean = false;
   count = 0;
-  texts: string[] = ["Consider donating to Fred TV", "Loading your channels..."];
+  texts: string[] = ["Loading your channels...", "Getting things ready..."];
 
   currentText: string = "";
   private timer?: ReturnType<typeof setInterval>;
