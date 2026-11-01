@@ -334,10 +334,17 @@ pub fn check_nuke() -> Result<()> {
     }
     std::fs::remove_file(path)?;
     let path = ProjectDirs::from("dev", "fredol", "open-tv").context("project dir not found")?;
-    let path = path.data_dir();
-    let path = path.join(sql::DB_NAME);
-    if path.exists() {
-        std::fs::remove_file(path)?;
+    let data_dir = path.data_dir();
+    // Remove the WAL sidecars too, so a stale log is never replayed into the new database
+    for name in [
+        sql::DB_NAME.to_string(),
+        format!("{}-wal", sql::DB_NAME),
+        format!("{}-shm", sql::DB_NAME),
+    ] {
+        let path = data_dir.join(name);
+        if path.exists() {
+            std::fs::remove_file(path)?;
+        }
     }
     Ok(())
 }

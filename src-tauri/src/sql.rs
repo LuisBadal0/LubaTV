@@ -1,3 +1,4 @@
+use std::time::Duration;
 use std::vec;
 use std::{collections::HashMap, sync::LazyLock};
 
@@ -28,8 +29,24 @@ pub fn get_conn() -> Result<PooledConnection<SqliteConnectionManager>> {
 }
 
 fn create_connection_pool() -> Pool<SqliteConnectionManager> {
-    let manager = SqliteConnectionManager::file(get_and_create_sqlite_db_path());
+    let manager =
+        SqliteConnectionManager::file(get_and_create_sqlite_db_path()).with_init(configure_connection);
     r2d2::Pool::builder().max_size(20).build(manager).unwrap()
+}
+
+/// WAL lets searches keep reading the last committed data while a source refresh
+/// writes in a long transaction; without it readers get "database is locked".
+/// NORMAL sync is crash-safe in WAL mode and avoids an fsync on every commit.
+fn configure_connection(conn: &mut rusqlite::Connection) -> rusqlite::Result<()> {
+    conn.pragma_update_and_check(None, "journal_mode", "WAL", |row| row.get::<_, String>(0))?;
+    conn.pragma_update(None, "synchronous", "NORMAL")?;
+    conn.busy_timeout(Duration::from_secs(5))?;
+    Ok(())
+}
+
+/// Row offset for a 1-based page number.
+fn page_offset(page: u32) -> u32 {
+    page.saturating_sub(1) * PAGE_SIZE as u32
 }
 
 fn get_and_create_sqlite_db_path() -> String {
@@ -465,7 +482,7 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
         return search_series(filters);
     }
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let offset = page_offset(filters.page);
     let media_types = match filters.series_id.is_some() {
         true => vec![1],
         false => filters.media_types.clone().unwrap(),
@@ -545,7 +562,7 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
 
 fn search_series(filters: Filters) -> Result<Vec<Channel>> {
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let offset = page_offset(filters.page);
     let query = filters.query.unwrap_or("".to_string());
     let keywords: Vec<String> = match filters.use_keywords {
         true => query
@@ -817,7 +834,7 @@ fn apply_bulk_channels(
 
 fn search_hidden(filters: Filters) -> Result<Vec<Channel>> {
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let offset = page_offset(filters.page);
 
     let media_types = match filters.series_id.is_some() {
         true => vec![1],
@@ -929,7 +946,7 @@ fn to_sql_like(query: Option<String>) -> String {
 
 pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
     let sql = get_conn()?;
-    let offset: u16 = filters.page as u16 * PAGE_SIZE as u16 - PAGE_SIZE as u16;
+    let offset = page_offset(filters.page);
     let query = filters.query.unwrap_or("".to_string());
     let media_types = filters.media_types.context("no media types")?;
     let keywords: Vec<String> = match filters.use_keywords {
@@ -1834,4 +1851,19 @@ pub fn update_source_last_updated(source_id: i64) -> Result<()> {
         params![chrono::Utc::now().timestamp(), source_id],
     )?;
     Ok(())
+}
+
+#[cfg(test)]
+mod test_sql {
+    use super::page_offset;
+
+    #[test]
+    fn test_page_offset() {
+        assert_eq!(page_offset(0), 0);
+        assert_eq!(page_offset(1), 0);
+        assert_eq!(page_offset(2), 36);
+        // Past the old u8 page / u16 offset limits
+        assert_eq!(page_offset(256), 9180);
+        assert_eq!(page_offset(2000), 71964);
+    }
 }
