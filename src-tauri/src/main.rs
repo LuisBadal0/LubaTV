@@ -9,6 +9,9 @@ use std::path::Path;
 
 fn main() -> Result<()> {
     apply_gpu_fixes();
+    _ = lubatv_lib::legacy::migrate()
+        .with_context(|| "Failed to copy data from the previous app folder")
+        .inspect_err(|e| log::log(format!("{:?}", e)));
     _ = lubatv_lib::utils::check_nuke()
         .with_context(|| "Failed to delete db after nuke request")
         .inspect_err(|e| log::log(format!("{:?}", e)));

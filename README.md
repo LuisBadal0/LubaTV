@@ -96,6 +96,8 @@ The script copies the files from an installed LubaTV if it finds one, and otherw
 | Linux | `~/.local/share/lubatv` | `~/.cache/lubatv/logs` |
 | macOS | `~/Library/Application Support/dev.luisbadalo.lubatv` | `~/Library/Caches/dev.luisbadalo.lubatv/logs` |
 
+The first time LubaTV starts, it copies your sources, favorites and settings from the app it was forked from, if that app is installed. It then asks once whether to delete that app's old folders or keep them (keep them if you still use it).
+
 If something stays broken after an update, **Settings → Delete everything** resets the app.
 
 ## Privacy

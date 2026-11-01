@@ -36,6 +36,8 @@ import { SortType } from "../models/sortType";
 import { getVersion } from "@tauri-apps/api/app";
 import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { WhatsNewModalComponent } from "../whats-new-modal/whats-new-modal.component";
+import { LegacyDataModalComponent } from "../legacy-data-modal/legacy-data-modal.component";
+import { LegacyData } from "../models/legacyData";
 import { LAST_SEEN_VERSION } from "../models/localStorage";
 import { isInputFocused } from "../utils";
 import { Node } from "../models/node";
@@ -145,6 +147,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
                 keyboard: false,
               });
               this.memory.ModalRef.componentInstance.name = "WhatsNewModal";
+              const afterWhatsNew = () => {
+                this.memory.ModalRef = undefined;
+                this.checkLegacyData();
+              };
+              this.memory.ModalRef.result.then(afterWhatsNew, afterWhatsNew);
+            } else {
+              this.checkLegacyData();
             }
           });
           sources
@@ -187,6 +196,25 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
         this.error.handleError(e);
         this.reset();
       });
+  }
+
+  /** Once, after the data was copied from the app LubaTV was forked from: keep or delete it. */
+  async checkLegacyData() {
+    try {
+      const legacy: LegacyData | null = await invoke("get_legacy_data");
+      if (!legacy) return;
+      const ref = this.modal.open(LegacyDataModalComponent, {
+        backdrop: "static",
+        size: "lg",
+        keyboard: false,
+      });
+      ref.componentInstance.legacy = legacy;
+      this.memory.ModalRef = ref;
+      const clear = () => (this.memory.ModalRef = undefined);
+      ref.result.then(clear, clear);
+    } catch (e) {
+      this.error.handleError(e);
+    }
   }
 
   async refreshOnStart() {
