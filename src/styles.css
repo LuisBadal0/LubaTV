@@ -67,12 +67,20 @@ body {
   margin: 0;
   font-family: var(--bs-body-font-family);
   background-color: var(--lt-bg);
-  background-image: radial-gradient(1200px 500px at 10% -10%, rgba(99, 102, 241, 0.12), transparent 60%),
-    radial-gradient(900px 400px at 100% -5%, rgba(236, 72, 153, 0.08), transparent 60%);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
   color: var(--lt-text);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient glow on its own fixed layer: background-attachment: fixed would repaint the
+   whole page on every scroll frame. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(1200px 500px at 10% -10%, rgba(99, 102, 241, 0.12), transparent 60%),
+    radial-gradient(900px 400px at 100% -5%, rgba(236, 72, 153, 0.08), transparent 60%);
 }
 
 ::-webkit-scrollbar {
@@ -151,9 +159,8 @@ h5 {
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1.5rem;
-  background: rgba(15, 15, 20, 0.78);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  /* Near-opaque instead of a backdrop blur, which re-renders on every scroll frame */
+  background: rgba(15, 15, 20, 0.94);
   border-bottom: 1px solid var(--lt-border);
 }
 

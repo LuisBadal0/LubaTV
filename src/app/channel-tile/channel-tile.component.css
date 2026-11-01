@@ -8,15 +8,13 @@
   border-radius: var(--lt-radius);
   overflow: hidden;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.2s var(--lt-ease),
-    box-shadow 0.2s ease;
+  /* Instant, colour-only hover: transitions and a lift re-rendered tiles under the
+     cursor on every scroll frame */
 }
 
 .channel:hover {
   background: var(--lt-surface-2);
-  border-color: rgba(139, 92, 246, 0.45);
-  transform: translateY(-2px);
-  box-shadow: var(--lt-shadow);
+  border-color: rgba(139, 92, 246, 0.5);
 }
 
 .channel:focus {
