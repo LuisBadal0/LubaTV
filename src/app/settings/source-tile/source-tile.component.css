@@ -1,10 +1,17 @@
 .source {
-    border-radius: var(--lt-radius-lg);
-    background-color: var(--lt-surface);
+    border-radius: 14px;
+    background-color: var(--lt-surface-2);
     border: 1px solid var(--lt-border);
     width: 100%;
-    padding: 1.25rem 1.5rem;
+    padding: 1rem 1.25rem;
     position: relative;
+    font-size: 0.86rem;
+}
+
+.source .btn {
+    --bs-btn-padding-y: 0.3rem;
+    --bs-btn-padding-x: 0.7rem;
+    --bs-btn-font-size: 0.8rem;
 }
 
 .source h4 {

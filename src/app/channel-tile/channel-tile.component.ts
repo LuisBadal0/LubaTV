@@ -18,7 +18,7 @@ import { MediaType } from "../models/mediaType";
 import { invoke } from "@tauri-apps/api/core";
 import { ToastrService } from "ngx-toastr";
 import { ErrorService } from "../error.service";
-import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { NgbModal, NgbTooltip } from "@ng-bootstrap/ng-bootstrap";
 import { EditChannelModalComponent } from "../edit-channel-modal/edit-channel-modal.component";
 import { EditGroupModalComponent } from "../edit-group-modal/edit-group-modal.component";
 import { DeleteGroupModalComponent } from "../delete-group-modal/delete-group-modal.component";
@@ -35,6 +35,30 @@ import { NodeType, fromMediaType } from "../models/nodeType";
 
 import { ViewMode } from "../models/viewMode";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { GroupPreview } from "../models/groupPreview";
+import { TimeAgoPipe } from "../pipes/time-ago.pipe";
+
+/** Card tints, picked from the name so a channel always gets the same colour. */
+const TINTS: [string, string][] = [
+  ["#2563EB", "#60A5FA"], ["#DC2626", "#F87171"], ["#059669", "#34D399"], ["#D97706", "#FBBF24"],
+  ["#7C3AED", "#C084FC"], ["#0891B2", "#22D3EE"], ["#DB2777", "#F472B6"], ["#4B5563", "#9CA3AF"],
+];
+
+/** "UK | Channel" or "|UK| Channel": a short country prefix shown as a corner tag. */
+const COUNTRY_PREFIX = /^\s*\|?\s*([A-Z]{2,3})\s*\|\s*(\S.*)$/;
+
+const timeAgo = new TimeAgoPipe();
+
+function rgba(hex: string, alpha: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+function hash(text: string): number {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
 
 @Component({
   selector: "app-channel-tile",
@@ -58,6 +82,14 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
   @Input() channel?: Channel;
   @Input() id!: number;
   @Input() viewMode: number = 0;
+  /** "card" in the grid, "wide" in the Continue watching row. */
+  @Input() variant: "card" | "wide" = "card";
+  /** Keyboard focus id prefix; home's focus areas look tiles up by it. */
+  @Input() idPrefix = "tile-";
+  /** Count and logos for a category tile. */
+  @Input() preview?: GroupPreview;
+  /** When this channel was last watched (Unix seconds), for the Continue watching row. */
+  @Input() lastWatched?: number;
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
   menuTopLeftPosition = { x: 0, y: 0 };
   showImage: boolean = true;
@@ -69,6 +101,30 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
   viewModeEnum = ViewMode;
   subscriptions: Subscription[] = [];
   fade = false;
+  displayName = "";
+  tag?: string;
+  initials = "";
+  tintStyle = "";
+  tooltip = "";
+  private brokenPreviews = new Set<string>();
+  private tipTimer?: ReturnType<typeof setTimeout>;
+
+  /** Full-name tooltip: after a short hover, or straight away on keyboard focus. */
+  hoverTip(tip: NgbTooltip) {
+    if (!this.tooltip) return;
+    clearTimeout(this.tipTimer);
+    this.tipTimer = setTimeout(() => tip.open(), 400);
+  }
+
+  focusTip(event: FocusEvent, tip: NgbTooltip) {
+    // Focus that follows a mouse click is not :focus-visible; only keyboard focus shows it.
+    if (this.tooltip && (event.target as HTMLElement).matches(":focus-visible")) tip.open();
+  }
+
+  hideTip(tip: NgbTooltip) {
+    clearTimeout(this.tipTimer);
+    tip.close();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     // Tiles are reused across reloads (trackBy), so reset per-item display state when
@@ -77,7 +133,64 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
     if (channel && !channel.firstChange) {
       this.fade = false;
       this.showImage = true;
+      this.brokenPreviews.clear();
     }
+    if (channel) this.updateDisplay();
+  }
+
+  private updateDisplay() {
+    const name = this.channel?.name ?? "";
+    const prefix = COUNTRY_PREFIX.exec(name);
+    this.tag = prefix?.[1];
+    this.displayName = prefix ? prefix[2] : name;
+    const words = this.displayName.match(/[\p{L}\p{N}]+/gu) ?? [];
+    const first = words[0] ?? "?";
+    const second = words[1];
+    this.initials = (second ? first.charAt(0) + second.charAt(0) : first.slice(0, 2)).toUpperCase();
+    const [c, c2] = TINTS[hash(name) % TINTS.length];
+    this.tintStyle = `--c:${c};--c2:${c2};--tint:${rgba(c, 0.3)};--tint-strong:${rgba(c, 0.55)}`;
+    // Show the full name on hover only when the card may not fit it.
+    this.tooltip = this.tag || this.displayName.length > 30 ? name : "";
+  }
+
+  isGroup(): boolean {
+    return this.channel?.media_type == MediaType.group;
+  }
+
+  badgeText(): string {
+    switch (this.channel?.media_type) {
+      case MediaType.livestream:
+        return "LIVE";
+      case MediaType.movie:
+        return this.channel?.episode_num != null ? "EPISODE" : "MOVIE";
+      case MediaType.serie:
+        return "SERIES";
+      case MediaType.season:
+        return "SEASON";
+      default:
+        return "";
+    }
+  }
+
+  countText(): string {
+    if (!this.preview) return "Category";
+    const count = this.preview.count;
+    return `${count.toLocaleString()} ${count == 1 ? "item" : "items"}`;
+  }
+
+  previewImages(): string[] {
+    return (this.preview?.images ?? []).filter((image) => !this.brokenPreviews.has(image));
+  }
+
+  hidePreview(image: string) {
+    this.brokenPreviews.add(image);
+  }
+
+  wideSubtitle(): string {
+    const type = this.badgeText().toLowerCase();
+    const label = type == "live" ? "Live" : type.charAt(0).toUpperCase() + type.slice(1);
+    const when = this.lastWatched ? timeAgo.transform(this.lastWatched * 1000) : this.getSourceName();
+    return when ? `${label} · ${when}` : label;
   }
 
   ngAfterViewInit(): void {
@@ -85,13 +198,13 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
   }
 
   setDownloadGradient(progress: number) {
-    let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
+    let element = this.el.nativeElement.querySelector(`#${this.idPrefix}${this.id}`);
     let background = `linear-gradient(to right, rgba(34, 197, 94, 0.32) ${progress}%, var(--lt-surface) ${progress}%)`;
     this.renderer.setStyle(element, "background", background);
   }
 
   clearDownloadGradient() {
-    let element = this.el.nativeElement.querySelector(`#tile-${this.id}`);
+    let element = this.el.nativeElement.querySelector(`#${this.idPrefix}${this.id}`);
     this.renderer.removeStyle(element, "background");
   }
 
@@ -143,7 +256,7 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
     }
     this.starting = true;
     this.cdr.markForCheck();
-    this.memory.SetFocus.next(this.id);
+    if (this.idPrefix == "tile-") this.memory.SetFocus.next(this.id);
     try {
       await invoke("play", { channel: this.channel, record: record, recordPath: file });
     } catch (e) {
@@ -468,6 +581,7 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
   }
 
   ngOnDestroy() {
+    clearTimeout(this.tipTimer);
     this.subscriptions.forEach((x) => x.unsubscribe());
   }
 }

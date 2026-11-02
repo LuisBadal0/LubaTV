@@ -44,6 +44,8 @@ export class MemoryService {
   public trayEnabled?: boolean;
   public IsContainer?: boolean;
   public AlwaysAskSave?: boolean;
+  /** A view chosen in the sidebar while on another page; Home opens it next. */
+  public PendingView?: number;
 
   async tryIPC<T>(
     successMessage: string,

@@ -1,0 +1,30 @@
+<aside class="side">
+  <div class="brand">
+    <img src="assets/brand/lubatv-icon.svg" alt="" />
+    <span class="brand-name">Luba<em>TV</em></span>
+  </div>
+
+  <nav class="nav" aria-label="Views">
+    <button *ngFor="let item of views; let i = index" type="button" [id]="'viewMode-' + i" class="nav-item"
+      [class.on]="active === item.view" (click)="choose(item.view)" [title]="item.label">
+      <app-icon [name]="item.icon" />
+      <span class="label">{{ item.label }}</span>
+    </button>
+  </nav>
+
+  <ng-container *ngIf="sources.length">
+    <div class="sect">Sources</div>
+    <button *ngFor="let source of sources" type="button" class="src" (click)="openSettings('sources')"
+      [title]="source.name + ' · ' + sourceKind(source)">
+      <span class="dot" [style.background]="sourceColor(source.id)"></span>
+      <span class="label">{{ source.name }}</span>
+    </button>
+  </ng-container>
+
+  <div class="foot">
+    <button type="button" class="nav-item" [class.on]="active === 'settings'" (click)="openSettings()" title="Settings">
+      <app-icon name="cog" />
+      <span class="label">Settings</span>
+    </button>
+  </div>
+</aside>

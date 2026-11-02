@@ -14,6 +14,7 @@
 
 - **Any IPTV source:** M3U files, M3U links and Xtream accounts, with several sources at once
 - **Live TV, movies and series**, with categories, seasons and episodes
+- **Continue watching** on the home screen, and category tiles that preview what's inside
 - **Instant search**, by whole phrase or by keywords
 - **Favorites, history and hidden items**, with bulk hide and favorite from the search bar
 - **EPG** for Xtream sources, with notifications for upcoming programmes
@@ -24,9 +25,11 @@
 - **Keyboard and TV-remote navigation**
 - Playback through [mpv](https://mpv.io/), with optional hardware decoding and GPU rendering
 
-| Settings | First run |
+| Categories | Settings |
 |---|---|
-| ![Settings](screenshots/lubatv-settings.png) | ![Setup](screenshots/lubatv-setup.png) |
+| ![Categories](screenshots/lubatv-categories.png) | ![Settings](screenshots/lubatv-settings.png) |
+
+![First run](screenshots/lubatv-setup.png)
 
 ## Install
 

@@ -32,6 +32,8 @@ import { SortButtonComponent } from './home/sort-button/sort-button.component';
 import { SortItemComponent } from './home/sort-button/sort-item/sort-item.component';
 import { DownloadManagerComponent } from './download-manager/download-manager.component';
 import { LegacyDataModalComponent } from './legacy-data-modal/legacy-data-modal.component';
+import { IconComponent } from './icon/icon.component';
+import { SidebarComponent } from './sidebar/sidebar.component';
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 import { TimeUntilPipe } from './pipes/time-until.pipe';
@@ -64,6 +66,8 @@ import { TimeUntilPipe } from './pipes/time-until.pipe';
     SortItemComponent,
     DownloadManagerComponent,
     LegacyDataModalComponent,
+    IconComponent,
+    SidebarComponent,
   ],
   imports: [
     BrowserModule,

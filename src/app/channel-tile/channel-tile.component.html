@@ -1,31 +1,55 @@
-<div id="tile-{{ id }}" placement="top" tabindex="0" (keyup.enter)="click()" [ngClass]="{
-    playing: starting,
-    faded: fade
-}" [ngbTooltip]="channel?.name" triggers="hover" (click)="click()" class="channel d-flex align-items-center"
+<div [attr.id]="idPrefix + id" tabindex="0" class="tile" [class.wide]="variant === 'wide'" [class.category]="isGroup()"
+  [class.playing]="starting" [class.faded]="fade" [ngbTooltip]="tooltip" #tip="ngbTooltip" triggers="manual"
+  placement="top" container="body" (mouseenter)="hoverTip(tip)" (mouseleave)="hideTip(tip)"
+  (focus)="focusTip($event, tip)" (blur)="hideTip(tip)" (click)="click()" (keyup.enter)="click()"
   (contextmenu)="onRightClick($event)">
-  <div class="image-container">
-    <img (error)="showImage = false" class="channel-image" *ngIf="channel?.image && showImage"
-      loading="lazy" decoding="async" src="{{ channel?.image }}" />
-    <span class="image-fallback" *ngIf="!channel?.image || !showImage" aria-hidden="true">{{
-      channel?.name?.charAt(0) }}</span>
+
+  <!-- Continue watching -->
+  <div *ngIf="variant === 'wide'" class="wide-body" [attr.style]="tintStyle">
+    <span class="logo sm">
+      <img *ngIf="channel?.image && showImage" (error)="showImage = false" loading="lazy" decoding="async"
+        [src]="channel?.image" alt="" />
+      <span *ngIf="!channel?.image || !showImage" class="initials">{{ initials }}</span>
+    </span>
+    <span class="wide-text">
+      <span class="nm">{{ displayName }}</span>
+      <span class="sub">{{ starting ? "Starting…" : wideSubtitle() }}</span>
+    </span>
+    <span class="play-btn"><app-icon name="play" /></span>
   </div>
-  <div class="channel-title-container d-flex flex-column justify-content-center">
-    <div class="channel-title">{{ channel?.name }}</div>
-    <div class="channel-source">{{ getSourceName() }}</div>
+
+  <!-- Category -->
+  <div *ngIf="variant !== 'wide' && isGroup()" class="cat-body" [attr.style]="tintStyle">
+    <span class="tag" *ngIf="tag">{{ tag }}</span>
+    <h3>{{ displayName }}</h3>
+    <p>{{ countText() }}</p>
+    <div class="stack" *ngIf="previewImages().length; else catIcon">
+      <span class="mini" *ngFor="let image of previewImages()">
+        <img [src]="image" loading="lazy" decoding="async" alt="" (error)="hidePreview(image)" />
+      </span>
+    </div>
+    <ng-template #catIcon><app-icon name="library" class="cat-icon" /></ng-template>
   </div>
-  <div class="tile-badges">
-    <svg *ngIf="channel?.tv_archive === true" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      class="archive-icon">
-      <title>archive-clock</title>
-      <path
-        d="M20 6H2V2H20V6M16.5 12H15V17L18.61 19.16L19.36 17.94L16.5 16.25V12M23 16C23 19.87 19.87 23 16 23C13.62 23 11.53 21.81 10.26 20H3V7H19V9.68C21.36 10.81 23 13.21 23 16M8 12H10.26C10.83 11.19 11.56 10.5 12.41 10H8.5C8.22 10 8 10.22 8 10.5V12M21 16C21 13.24 18.76 11 16 11S11 13.24 11 16 13.24 21 16 21 21 18.76 21 16Z" />
-    </svg>
-    <svg *ngIf="channel?.favorite" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-      class="favorite-icon">
-      <title>star</title>
-      <path d="M12,17.27L18.18,21L16.54,13.97L22,9.24L14.81,8.62L12,2L9.19,8.62L2,9.24L7.45,13.97L5.82,21L12,17.27Z" />
-    </svg>
-  </div>
+
+  <!-- Channel, movie, series, season -->
+  <ng-container *ngIf="variant !== 'wide' && !isGroup()">
+    <div class="plate" [attr.style]="tintStyle">
+      <span class="badge" [class.live]="isLivestream()">{{ badgeText() }}</span>
+      <span class="tag" *ngIf="tag">{{ tag }}</span>
+      <img *ngIf="channel?.image && showImage" class="logo-img" (error)="showImage = false" loading="lazy"
+        decoding="async" [src]="channel?.image" alt="" />
+      <span *ngIf="!channel?.image || !showImage" class="logo"><span class="initials">{{ initials }}</span></span>
+      <span class="eq" *ngIf="starting"><span></span><span></span><span></span><span></span></span>
+    </div>
+    <div class="meta">
+      <div class="nm">{{ displayName }}</div>
+      <div class="sub">
+        <app-icon *ngIf="channel?.favorite" name="star" class="fav" />
+        <app-icon *ngIf="channel?.tv_archive" name="archive" class="arch" />
+        <span class="sub-text">{{ starting ? "Starting…" : getSourceName() }}</span>
+      </div>
+    </div>
+  </ng-container>
 </div>
 
 <div style="visibility: hidden; position: fixed" [style.left.px]="menuTopLeftPosition.x"
@@ -34,34 +58,33 @@
 <mat-menu #rightMenu="matMenu">
   <ng-template matMenuContent let-item="item">
     <button [hidden]="viewMode != viewModeEnum.History" mat-menu-item (click)="removeFromHistory()">
-      Remove
+      <app-icon name="history" />Remove from history
     </button>
     <button [hidden]="
         channel?.media_type == mediaTypeEnum.group || channel?.media_type == mediaTypeEnum.season || viewMode == viewModeEnum.History
       " mat-menu-item (click)="favorite()">
-      <ng-container *ngIf="alreadyExistsInFav">Unfavorite</ng-container>
-      <ng-container *ngIf="!alreadyExistsInFav">Favorite</ng-container>
+      <app-icon [name]="alreadyExistsInFav ? 'starOff' : 'star'" />{{ alreadyExistsInFav ? "Remove from favorites" :
+      "Add to favorites" }}
     </button>
-    <button [hidden]="isCustom() || viewMode == viewModeEnum.History" mat-menu-item (click)="hide()"> <ng-container
-        *ngIf="alreadyHidden">Unhide</ng-container>
-      <ng-container *ngIf="!alreadyHidden">Hide</ng-container>
-    </button>
-    <button [hidden]="!isLivestream()" mat-menu-item (click)="record()">Record</button>
+    <button [hidden]="!isLivestream()" mat-menu-item (click)="record()"><app-icon name="record" />Record</button>
     <button [hidden]="!isMovie() || downloading" mat-menu-item (click)="downloadVod()">
-      Download
+      <app-icon name="download" />Download
     </button>
     <button [hidden]="!isMovie() || !downloading" mat-menu-item (click)="cancelDownload()">
-      Cancel download
+      <app-icon name="close" />Cancel download
     </button>
-    <button [hidden]="!showEPG()" mat-menu-item (click)="showEPGModal()">EPG</button>
-    <button [hidden]="!isCustom()" mat-menu-item (click)="edit()">Edit</button>
-    <button [hidden]="!isCustom()" mat-menu-item (click)="share()">Share</button>
+    <button [hidden]="!showEPG()" mat-menu-item (click)="showEPGModal()"><app-icon name="guide" />TV guide</button>
     <button [hidden]="!isLivestream()" mat-menu-item (click)="openRestreamModal()">
-      Re-stream
+      <app-icon name="cast" />Re-stream
     </button>
+    <button [hidden]="!isCustom()" mat-menu-item (click)="edit()"><app-icon name="pen" />Edit</button>
+    <button [hidden]="!isCustom()" mat-menu-item (click)="share()"><app-icon name="share" />Share</button>
     <button mat-menu-item
       [hidden]="channel?.media_type == mediaTypeEnum.group || channel?.media_type == mediaTypeEnum.season"
-      (click)="copyURL()">Copy URL</button>
-    <button [hidden]="!isCustom()" mat-menu-item (click)="delete()">Delete</button>
+      (click)="copyURL()"><app-icon name="copy" />Copy URL</button>
+    <button [hidden]="isCustom() || viewMode == viewModeEnum.History" mat-menu-item (click)="hide()">
+      <app-icon [name]="alreadyHidden ? 'eye' : 'eyeOff'" />{{ alreadyHidden ? "Unhide" : "Hide" }}
+    </button>
+    <button [hidden]="!isCustom()" mat-menu-item (click)="delete()"><app-icon name="trash" />Delete</button>
   </ng-template>
 </mat-menu>
