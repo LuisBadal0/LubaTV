@@ -6,15 +6,22 @@
   Installers ship these in a "deps" folder next to the app. Debug builds (npm run tauri dev)
   look in src-tauri/deps instead, which is git-ignored because the binaries are large.
 
-  By default the files are copied from an installed LubaTV, if one is found.
-  Otherwise, or with -Download, they are downloaded from the same sources the release
-  workflow uses (.github/workflows/buildAndUpload.yml).
+  The files are pinned in src-tauri/player-files.json (SHA-256 and the release that has
+  each one). By default, files already in src-tauri/deps that match are kept, matching
+  copies from an installed LubaTV are copied, and the rest are downloaded from this
+  repository's player-files-* releases. Every file is checked against its checksum.
+  The release workflow builds the installers this way.
 
 .PARAMETER From
-  Copy from this folder (for example "C:\Program Files\LubaTV\deps").
+  Copy from this folder (for example "C:\Program Files\LubaTV\deps") without checking
+  checksums.
+
+.PARAMETER Latest
+  Download the newest upstream builds instead of the pinned files. Used by the Refresh
+  player files workflow to pin new versions.
 
 .PARAMETER Download
-  Download fresh builds even if an installed copy exists.
+  Download the pinned files even if an installed LubaTV has them.
 
 .PARAMETER Force
   Replace files that are already in src-tauri/deps.
@@ -22,11 +29,12 @@
 .EXAMPLE
   ./scripts/fetch-windows-deps.ps1
 .EXAMPLE
-  ./scripts/fetch-windows-deps.ps1 -Download -Force
+  ./scripts/fetch-windows-deps.ps1 -Latest -Force
 #>
 [CmdletBinding()]
 param(
   [string]$From,
+  [switch]$Latest,
   [switch]$Download,
   [switch]$Force
 )
@@ -39,7 +47,26 @@ $dest = Join-Path $PSScriptRoot "..\src-tauri\deps"
 New-Item -ItemType Directory -Path $dest -Force | Out-Null
 $dest = (Resolve-Path $dest).Path
 
-$missing = $files | Where-Object { $Force -or -not (Test-Path (Join-Path $dest $_)) }
+$lockPath = Join-Path $PSScriptRoot "..\src-tauri\player-files.json"
+$lock = Get-Content $lockPath -Raw | ConvertFrom-Json
+
+function Get-Sha256([string]$path) {
+  (Get-FileHash -Algorithm SHA256 -Path $path).Hash.ToLowerInvariant()
+}
+
+# True when the file exists and matches its pinned checksum.
+function Test-Pinned([string]$path, [string]$name) {
+  $pinned = $lock.files.$name
+  if (-not (Test-Path $path)) { return $false }
+  if ((Get-Item $path).Length -ne $pinned.size) { return $false }
+  return (Get-Sha256 $path) -eq $pinned.sha256
+}
+
+if ($Latest -or $From) {
+  $missing = $files | Where-Object { $Force -or -not (Test-Path (Join-Path $dest $_)) }
+} else {
+  $missing = $files | Where-Object { $Force -or -not (Test-Pinned (Join-Path $dest $_) $_) }
+}
 if (-not $missing) {
   Write-Host "All player files are already in $dest (use -Force to replace them)."
   exit 0
@@ -121,6 +148,53 @@ function Get-Mpv([string]$work) {
   Copy-Found $out $names
 }
 
+# Downloads <release>/<name>.gz for each missing file, unpacks it and checks its checksum.
+function Get-Pinned([string[]]$names) {
+  $repo = "https://github.com/LuisBadal0/LubaTV/releases/download"
+  foreach ($name in $names) {
+    $pinned = $lock.files.$name
+    $gz = Join-Path $dest "$name.gz.part"
+    $part = Join-Path $dest "$name.part"
+    Write-Host "Downloading $name ($([math]::Round($pinned.download_size / 1MB, 1)) MB, $($pinned.release))..."
+    Get-File "$repo/$($pinned.release)/$name.gz" $gz
+    $in = [IO.File]::OpenRead($gz)
+    try {
+      $unzip = New-Object IO.Compression.GZipStream($in, [IO.Compression.CompressionMode]::Decompress)
+      $out = [IO.File]::Create($part)
+      try { $unzip.CopyTo($out) } finally { $out.Dispose(); $unzip.Dispose() }
+    } finally {
+      $in.Dispose()
+      Remove-Item $gz -Force
+    }
+    if ((Get-Sha256 $part) -ne $pinned.sha256) {
+      Remove-Item $part -Force
+      throw "$name doesn't match its checksum in player-files.json"
+    }
+    Move-Item $part (Join-Path $dest $name) -Force
+  }
+}
+
+# Copies the files that match their pinned checksum from an installed LubaTV, and returns
+# the names it couldn't.
+function Copy-PinnedFromInstalled([string[]]$names) {
+  $folders = @(
+    (Join-Path $env:LOCALAPPDATA "LubaTV\deps"),
+    (Join-Path $env:ProgramFiles "LubaTV\deps"),
+    (Join-Path $env:LOCALAPPDATA "luisbadalo\lubatv\data\player")
+  ) | Where-Object { Test-Path $_ }
+  $left = @()
+  foreach ($name in $names) {
+    $found = $folders | ForEach-Object { Join-Path $_ $name } | Where-Object { Test-Pinned $_ $name } | Select-Object -First 1
+    if ($found) {
+      Copy-Item $found -Destination $dest -Force
+      Write-Host "Copied $name from $(Split-Path $found)"
+    } else {
+      $left += $name
+    }
+  }
+  return $left
+}
+
 function Get-Downloads {
   $work = Join-Path ([IO.Path]::GetTempPath()) ("lubatv-dl-" + [guid]::NewGuid())
   New-Item -ItemType Directory -Path $work | Out-Null
@@ -146,13 +220,11 @@ function Get-Downloads {
 
 if ($From) {
   Copy-FromFolder $From
-} elseif ($Download) {
+} elseif ($Latest) {
   Get-Downloads
 } else {
-  $installed = @(
-    (Join-Path $env:ProgramFiles "LubaTV\deps")
-  ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-  if ($installed) { Copy-FromFolder $installed } else { Get-Downloads }
+  $left = if ($Download) { $missing } else { Copy-PinnedFromInstalled $missing }
+  if ($left) { Get-Pinned $left }
 }
 
 Write-Host "Player files are in $dest"

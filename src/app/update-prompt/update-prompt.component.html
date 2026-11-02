@@ -1,4 +1,32 @@
-<div class="update-card" *ngIf="visible" role="status">
+<div class="update-card" *ngIf="playerVisible" role="status">
+  <img src="assets/brand/lubatv-icon.svg" alt="" />
+  <div class="body">
+    <ng-container [ngSwitch]="player.state">
+      <ng-container *ngSwitchCase="'syncing'">
+        <b>Updating the player…</b>
+        <ng-container *ngIf="player.total; else copying">
+          <div class="bar"><i [style.width.%]="player.progress"></i></div>
+          <span>{{ mb(player.downloaded) }} of {{ mb(player.total) }} MB, only the files that changed</span>
+        </ng-container>
+        <ng-template #copying><span>A few seconds, nothing to download.</span></ng-template>
+      </ng-container>
+      <ng-container *ngSwitchCase="'done'">
+        <b>The player is up to date</b>
+        <span>mpv, ffmpeg and yt-dlp are ready.</span>
+      </ng-container>
+      <ng-container *ngSwitchCase="'error'">
+        <b>Couldn't update the player</b>
+        <span class="error" [title]="player.error">{{ player.error }}</span>
+        <div class="actions">
+          <button type="button" class="btn btn-primary btn-sm" (click)="player.ensure()">Try again</button>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="player.dismiss()">Later</button>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+</div>
+
+<div class="update-card" *ngIf="visible && !playerVisible" role="status">
   <img src="assets/brand/lubatv-icon.svg" alt="" />
   <div class="body">
     <ng-container [ngSwitch]="updates.state">

@@ -56,10 +56,8 @@ jobs:
       - name: Download player files
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        env:
-          # Lets the script fall back to the GitHub API when nightly.link is unavailable.
-          GH_TOKEN: ${{ github.token }}
         run: |
+          # The versions pinned in src-tauri/player-files.json, checked against their checksums.
           ./scripts/fetch-windows-deps.ps1 -Download
           Get-ChildItem src-tauri/deps
 
@@ -89,18 +87,36 @@ jobs:
 
       - name: Build Windows installers
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         env:
-          # Signs the installers for the in-app updater (see plugins.updater in tauri.conf.json).
-          # Missing on pull requests from forks; those builds are left unsigned.
+          # Signs the update installers for the in-app updater (see plugins.updater in
+          # tauri.conf.json). Missing on pull requests from forks; those get no update installers.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
+          $bundle = "src-tauri/target/release/bundle"
+          New-Item -ItemType Directory installers | Out-Null
+
+          # Full installers, with the player files, for new installs.
+          npm run build:windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item "$bundle/nsis/*-setup.exe", "$bundle/msi/*.msi" installers/
+
+          # Update installers, without the player files, for the in-app updater (about 10 MB
+          # instead of 100). LubaTV then gets only the player files that changed.
           if ($env:TAURI_SIGNING_PRIVATE_KEY) {
-            npm run build:windows -- --config src-tauri/tauri.updater.conf.json
+            Remove-Item "$bundle/nsis", "$bundle/msi" -Recurse -Force
+            npx tauri bundle --bundles nsis,msi --config src-tauri/tauri.windows-update.conf.json --config src-tauri/tauri.updater.conf.json
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            foreach ($file in Get-ChildItem "$bundle/nsis/*-setup.exe", "$bundle/msi/*.msi") {
+              $name = $file.Name -replace '-setup\.exe$', '-update.exe' -replace '\.msi$', '-update.msi'
+              Copy-Item $file.FullName "installers/$name"
+              Copy-Item "$($file.FullName).sig" "installers/$name.sig"
+            }
           } else {
-            Write-Host "::warning::No updater signing key; building unsigned installers"
-            npm run build:windows
+            Write-Host "::warning::No updater signing key; building no update installers"
           }
+          Get-ChildItem installers | Format-Table Name, Length
 
       - name: Build Linux packages
         if: matrix.os == 'ubuntu-22.04'
@@ -112,11 +128,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lubatv-windows
-          path: |
-            src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/nsis/*.exe.sig
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/msi/*.msi.sig
+          path: installers/*
           if-no-files-found: error
           retention-days: 60
 
@@ -164,9 +176,9 @@ jobs:
       - name: Create release
         if: steps.existing.outputs.skip == 'false'
         run: |
-          # Artifacts keep their bundle folders (msi/, nsis/, deb/, rpm/), so
-          # collect the files themselves and make sure all four are there.
-          mapfile -t files < <(find installers -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.rpm" \) | sort)
+          # The Linux artifacts keep their bundle folders (deb/, rpm/), so collect the files
+          # themselves: the full installers people download. Make sure all four are there.
+          mapfile -t files < <(find installers -type f \( -name "*-setup.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.rpm" \) ! -name "*-update.*" | sort)
           if [ "${#files[@]}" -ne 4 ]; then
             echo "::error::Expected 4 installers (.exe, .msi, .deb, .rpm), found ${#files[@]}"
             find installers -type f
@@ -175,11 +187,12 @@ jobs:
           printf '%s\n' "${files[@]}"
 
           # latest.json tells installed copies about this version (the updater endpoint is
-          # releases/latest/download/latest.json). It needs the installers' signatures.
-          nsis=$(find installers -type f -name "*-setup.exe" | head -1)
-          msi=$(find installers -type f -name "*.msi" | head -1)
+          # releases/latest/download/latest.json). It points at the update installers, which
+          # leave out the player files, and needs their signatures.
+          nsis=$(find installers -type f -name "*-update.exe" | head -1)
+          msi=$(find installers -type f -name "*-update.msi" | head -1)
           extra=()
-          if [ -f "$nsis.sig" ] && [ -f "$msi.sig" ]; then
+          if [ -n "$nsis" ] && [ -n "$msi" ] && [ -f "$nsis.sig" ] && [ -f "$msi.sig" ]; then
             base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
             jq -n \
               --arg version "${TAG#v}" \
@@ -192,9 +205,9 @@ jobs:
                  "windows-x86_64-nsis": {signature: $nsisSig, url: $nsisUrl},
                  "windows-x86_64-msi": {signature: $msiSig, url: $msiUrl}}}' > latest.json
             cat latest.json
-            extra=(latest.json "$nsis.sig" "$msi.sig")
+            extra=(latest.json "$nsis" "$nsis.sig" "$msi" "$msi.sig")
           else
-            echo "::warning::No updater signatures; this release will not reach installed copies automatically"
+            echo "::warning::No signed update installers; this release will not reach installed copies automatically"
           fi
           cat > notes.md <<'EOF'
           ## Install
@@ -204,9 +217,12 @@ jobs:
           - **Fedora / openSUSE:** install the `.rpm` with your package manager.
 
           On Linux, mpv, ffmpeg and yt-dlp come from your distribution.
+
+          The `-update` installers are what LubaTV downloads to update itself. They leave out the player files, which LubaTV downloads only when they change.
           EOF
           gh release create "$TAG" "${files[@]}" "${extra[@]}" \
             --target "$GITHUB_SHA" \
             --title "LubaTV $TAG" \
+            --latest \
             --notes-file notes.md \
             --generate-notes
