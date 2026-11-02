@@ -43,6 +43,8 @@ import { isInputFocused } from "../utils";
 import { Node } from "../models/node";
 import { NodeType } from "../models/nodeType";
 import { Stack } from "../models/stack";
+import { GroupPreview } from "../models/groupPreview";
+import { SIDEBAR_VIEWS } from "../sidebar/sidebar.component";
 
 import { BulkActionType } from '../models/bulkActionType';
 
@@ -89,7 +91,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   focus: number = 0;
   focusArea = FocusArea.Tiles;
   viewType = ViewMode.All;
-  currentWindowSize: number = window.innerWidth;
   subscriptions: Subscription[] = [];
   filters?: Filters;
   chkLiveStream = true;
@@ -103,6 +104,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   nodeStack: Stack = new Stack();
   showScrollTop = false;
   hasXtream = false;
+  /** Continue watching row: latest history items and when each was watched (Unix seconds). */
+  recent: Channel[] = [];
+  lastWatched: Record<number, number> = {};
+  /** Item counts and logos for category tiles, by group id. */
+  previews: Record<number, GroupPreview> = {};
   private scrollFrame = 0;
 
   scrollToTop() {
@@ -173,7 +179,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
           }
           this.filters = {
             source_ids: Array.from(this.memory.Sources.keys()),
-            view_type: settings.default_view ?? ViewMode.All,
+            view_type: this.memory.PendingView ?? settings.default_view ?? ViewMode.All,
             media_types: [MediaType.livestream, MediaType.movie, MediaType.serie],
             page: 1,
             use_keywords: false,
@@ -183,6 +189,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
             this.memory.Sort.next([settings.default_sort, false]);
             this.filters.sort = settings.default_sort;
           }
+          this.memory.PendingView = undefined;
           this.hasXtream = this.anyXtream();
           this.chkSerie = this.hasXtream;
           if (settings.refresh_on_start === true && !sessionStorage.getItem("refreshedOnStart")) {
@@ -244,6 +251,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     );
     this.subscriptions.push(
       this.memory.SetFocus.subscribe((focus) => {
+        this.focusArea = FocusArea.Tiles;
         this.focus = focus;
       }),
     );
@@ -295,8 +303,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.filters!.query = "";
   }
 
-  async loadMore() {
-    this.load(true);
+  loadMore() {
+    return this.load(true);
   }
 
   async load(more = false) {
@@ -317,10 +325,100 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
         this.channels = this.channels.concat(channels);
       }
       this.reachedMax = channels.length < this.PAGE_SIZE;
+      if (!more) {
+        this.previews = {};
+        if (this.wantsRecent()) this.loadRecent();
+      }
+      this.loadPreviews(channels);
     } catch (e) {
       this.error.handleError(e);
     }
     this.loading = false;
+  }
+
+  /** The Continue watching row belongs on the unfiltered All view. */
+  private wantsRecent(): boolean {
+    const f = this.filters;
+    return !!f && f.view_type == ViewMode.All && !f.query && !f.group_id && !f.series_id;
+  }
+
+  showRecent(): boolean {
+    return this.viewType == ViewMode.All && this.wantsRecent() && this.recent.length > 0;
+  }
+
+  private async loadRecent() {
+    try {
+      const items: Channel[] = await invoke("search", {
+        filters: {
+          ...this.filters,
+          view_type: ViewMode.History,
+          page: 1,
+          query: "",
+          use_keywords: false,
+          group_id: undefined,
+          series_id: undefined,
+          season: undefined,
+          media_types: [MediaType.livestream, MediaType.movie, MediaType.serie],
+        },
+      });
+      this.recent = items.slice(0, 8);
+      const ids = this.recent.map((c) => c.id!).filter((id) => id != null);
+      this.lastWatched = ids.length ? await invoke("last_watched_times", { ids }) : {};
+    } catch (e) {
+      console.error(e);
+      this.recent = [];
+    }
+  }
+
+  private async loadPreviews(items: Channel[]) {
+    const ids = items
+      .filter((c) => c.media_type == MediaType.group && c.id != null && !(c.id in this.previews))
+      .map((c) => c.id!);
+    if (!ids.length) return;
+    try {
+      const previews: Record<number, GroupPreview> = await invoke("group_previews", { ids });
+      this.previews = { ...this.previews, ...previews };
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  isCategoryGrid(): boolean {
+    return this.viewType == ViewMode.Categories && !this.filters?.group_id && !this.filters?.series_id;
+  }
+
+  /** Title of the current view, ignoring any category or series opened inside it. */
+  viewTitle(): string {
+    switch (this.filters?.view_type) {
+      case ViewMode.Categories:
+        return "Categories";
+      case ViewMode.Favorites:
+        return "Favorites";
+      case ViewMode.History:
+        return "History";
+      case ViewMode.Hidden:
+        return "Hidden";
+      default:
+        return "All channels";
+    }
+  }
+
+  pageTitle(): string {
+    return this.nodeStack.get()?.name ?? this.viewTitle();
+  }
+
+  pageSubtitle(): string {
+    const count = this.memory.Sources.size;
+    const sources = `${count} ${count == 1 ? "source" : "sources"}`;
+    if (this.filters?.view_type == ViewMode.History) return `${sources} · most recent first`;
+    switch (this.filters?.sort) {
+      case SortType.alphabeticalAscending:
+        return `${sources} · A–Z`;
+      case SortType.alphabeticalDescending:
+        return `${sources} · Z–A`;
+      default:
+        return `${sources} · provider order`;
+    }
   }
 
   /**
@@ -472,6 +570,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     );
   }
 
+  toggleMediaType(mediaType: MediaType) {
+    if (mediaType == MediaType.livestream) this.chkLiveStream = !this.chkLiveStream;
+    else if (mediaType == MediaType.movie) this.chkMovie = !this.chkMovie;
+    else if (mediaType == MediaType.serie) this.chkSerie = !this.chkSerie;
+    this.updateMediaTypes(mediaType);
+  }
+
   updateMediaTypes(mediaType: MediaType) {
     let index = this.filters!.media_types.indexOf(mediaType);
     if (index == -1) this.filters!.media_types.push(mediaType);
@@ -565,80 +670,131 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.router.navigateByUrl("settings");
   }
 
+  /**
+   * Arrow keys, Tab and TV-remote navigation. The sidebar is a vertical list on the left;
+   * the content areas (media type chips, Continue watching, the grid) are stacked top to
+   * bottom, and the grid's column count follows the window width.
+   */
   async nav(key: string) {
     if (this.searchFocused()) return;
-    let lowSize = this.currentWindowSize < 768;
-    if (this.memory.currentContextMenu?.menuOpen || this.memory.ModalRef) {
+    if (this.memory.currentContextMenu?.menuOpen || this.memory.ModalRef) return;
+    const area = this.focusArea;
+    const count = this.areaCount(area);
+
+    if (area == FocusArea.ViewMode) {
+      if (key == "ArrowUp" || key == "ShiftTab") this.focusItem(area, Math.max(0, this.focus - 1));
+      else if ((key == "ArrowDown" || key == "Tab") && this.focus < count - 1) this.focusItem(area, this.focus + 1);
+      else if (key == "ArrowRight" || key == "Tab") this.enterContent();
       return;
     }
-    let tmpFocus = 0;
+    if (count == 0) return this.enterContent();
+
+    const cols = this.areaColumns(area);
+    const col = this.focus % cols;
     switch (key) {
-      case "ArrowUp":
-        tmpFocus -= 3;
-        break;
-      case "ArrowDown":
-        tmpFocus += 3;
-        break;
-      case "ShiftTab":
       case "ArrowLeft":
-        tmpFocus -= 1;
-        break;
-      case "Tab":
+        if (col == 0) return this.focusItem(FocusArea.ViewMode, this.viewModeIndex());
+        return this.focusItem(area, this.focus - 1);
       case "ArrowRight":
-        tmpFocus += 1;
-        break;
-    }
-    let goOverSize = this.shortFiltersMode() ? 1 : 2;
-    if (lowSize && tmpFocus % 3 == 0 && this.focusArea == FocusArea.Tiles) tmpFocus / 3;
-    tmpFocus += this.focus;
-    if (tmpFocus < 0) {
-      this.changeFocusArea(false);
-    } else if (tmpFocus > goOverSize && this.focusArea == FocusArea.Filters) {
-      this.changeFocusArea(true);
-    } else if (tmpFocus > 4 && this.focusArea == FocusArea.ViewMode) {
-      this.changeFocusArea(true);
-    } else if (
-      this.focusArea == FocusArea.Tiles &&
-      tmpFocus >= this.filters!.page * 36 &&
-      !this.reachedMax
-    )
-      await this.loadMore();
-    else {
-      if (tmpFocus >= this.channels.length && this.focusArea == FocusArea.Tiles)
-        tmpFocus = (this.channels.length == 0 ? 1 : this.channels.length) - 1;
-      this.focus = tmpFocus;
-      setTimeout(() => {
-        document.getElementById(`${FocusAreaPrefix[this.focusArea]}${this.focus}`)?.focus();
-      }, 0);
+        if (col < cols - 1 && this.focus + 1 < count) this.focusItem(area, this.focus + 1);
+        return;
+      case "ArrowUp":
+        if (this.focus - cols >= 0) return this.focusItem(area, this.focus - cols);
+        return this.moveToArea(area, -1, col);
+      case "ArrowDown":
+        if (this.focus + cols < count) return this.focusItem(area, this.focus + cols);
+        if (area == FocusArea.Tiles) return this.focusAfterLoadingMore(this.focus + cols);
+        return this.moveToArea(area, 1, col);
+      case "Tab":
+        if (this.focus + 1 < count) return this.focusItem(area, this.focus + 1);
+        if (area == FocusArea.Tiles) return this.focusAfterLoadingMore(this.focus + 1);
+        return this.moveToArea(area, 1, 0);
+      case "ShiftTab": {
+        if (this.focus > 0) return this.focusItem(area, this.focus - 1);
+        const previous = this.adjacentArea(area, -1);
+        if (previous == undefined) return this.focusItem(FocusArea.ViewMode, this.viewModeIndex());
+        return this.focusItem(previous, this.areaCount(previous) - 1);
+      }
     }
   }
 
-  shortFiltersMode() {
-    return this.filters?.source_ids.findIndex((x) => this.memory.XtreamSourceIds.has(x)) == -1;
+  private areaCount(area: FocusArea): number {
+    switch (area) {
+      case FocusArea.ViewMode:
+        return SIDEBAR_VIEWS.length;
+      case FocusArea.Filters:
+        return this.filtersVisible() ? (this.hasXtream ? 3 : 2) : 0;
+      case FocusArea.Recent:
+        return this.showRecent() ? this.recent.length : 0;
+      default:
+        return this.channels.length;
+    }
+  }
+
+  /** Items per row: the grid follows its CSS columns, the other content areas are one row. */
+  private areaColumns(area: FocusArea): number {
+    if (area == FocusArea.ViewMode) return 1;
+    if (area == FocusArea.Tiles) {
+      const grid = document.querySelector(".tile-grid");
+      if (grid) return this.cssColumns(grid);
+    }
+    return Math.max(1, this.areaCount(area));
+  }
+
+  private cssColumns(grid: Element): number {
+    return getComputedStyle(grid).gridTemplateColumns.split(" ").filter((c) => c).length || 1;
+  }
+
+  /** The nearest non-empty content area above (-1) or below (1). */
+  private adjacentArea(area: FocusArea, direction: number): FocusArea | undefined {
+    const order = [FocusArea.Filters, FocusArea.Recent, FocusArea.Tiles];
+    for (let i = order.indexOf(area) + direction; i >= 0 && i < order.length; i += direction) {
+      if (this.areaCount(order[i]) > 0) return order[i];
+    }
+    return undefined;
+  }
+
+  private moveToArea(area: FocusArea, direction: number, col: number) {
+    const next = this.adjacentArea(area, direction);
+    if (next == undefined) return;
+    const count = this.areaCount(next);
+    const cols = this.areaColumns(next);
+    const lastRowStart = Math.floor((count - 1) / cols) * cols;
+    const index = direction > 0 ? Math.min(col, count - 1) : Math.min(count - 1, lastRowStart + col);
+    this.focusItem(next, index);
+  }
+
+  private enterContent() {
+    const first = [FocusArea.Tiles, FocusArea.Recent, FocusArea.Filters].find((a) => this.areaCount(a) > 0);
+    if (first != undefined) this.focusItem(first, 0);
+  }
+
+  private async focusAfterLoadingMore(index: number) {
+    if (this.reachedMax || this.loading) {
+      if (index >= this.channels.length && this.focus < this.channels.length - 1)
+        this.focusItem(FocusArea.Tiles, this.channels.length - 1);
+      return;
+    }
+    await this.loadMore();
+    this.focusItem(FocusArea.Tiles, Math.min(index, this.channels.length - 1));
+  }
+
+  private viewModeIndex(): number {
+    return Math.max(0, SIDEBAR_VIEWS.findIndex((v) => v.view == this.filters?.view_type));
+  }
+
+  private focusItem(area: FocusArea, index: number) {
+    this.focusArea = area;
+    this.focus = index;
+    setTimeout(() => {
+      const element = document.getElementById(`${FocusAreaPrefix[area]}${index}`);
+      element?.focus({ preventScroll: true });
+      element?.scrollIntoView({ block: "nearest" });
+    }, 0);
   }
 
   anyXtream() {
     return Array.from(this.memory.Sources.values()).findIndex((x) => x.source_type == SourceType.Xtream) != -1;
-  }
-
-  changeFocusArea(down: boolean) {
-    let increment = down ? 1 : -1;
-    this.focusArea += increment;
-    if (this.focusArea == FocusArea.Filters && !this.filtersVisible()) this.focusArea += increment;
-    if (this.focusArea < 0) this.focusArea = 0;
-    this.applyFocusArea(down);
-  }
-
-  applyFocusArea(down: boolean) {
-    this.focus = down
-      ? 0
-      : this.focusArea == FocusArea.Filters
-        ? this.shortFiltersMode()
-          ? 1
-          : 2
-        : 4;
-    let id = FocusAreaPrefix[this.focusArea] + this.focus;
-    document.getElementById(id)?.focus();
   }
 
   //Temporary solution because the ng-keyboard-shortcuts library doesn't seem to support ESC
@@ -656,8 +812,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       event.preventDefault();
       this.nav(event.shiftKey ? "ShiftTab" : "Tab");
     }
-    if (event.key == "Enter" && this.focusArea == FocusArea.Filters)
-      (document.activeElement as any).click();
   }
 
   selectFirstChannel() {

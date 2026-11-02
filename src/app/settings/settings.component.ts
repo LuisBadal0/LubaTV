@@ -2,7 +2,7 @@ import { Component, ElementRef, HostListener, ViewChild } from "@angular/core";
 import { debounceTime, distinctUntilChanged, fromEvent, map, Subscription } from "rxjs";
 import { Settings } from "../models/settings";
 import { invoke } from "@tauri-apps/api/core";
-import { Router } from "@angular/router";
+import { ActivatedRoute, Router } from "@angular/router";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Source } from "../models/source";
 import { MemoryService } from "../memory.service";
@@ -37,12 +37,23 @@ export class SettingsComponent {
   sortTypes = SORT_TYPES;
   @ViewChild("mpvParams") mpvParams!: ElementRef;
   appVersion?: string;
+  readonly sections = [
+    { id: "general", label: "General" },
+    { id: "playback", label: "Playback" },
+    { id: "recording", label: "Recording" },
+    { id: "restream", label: "Re-stream" },
+    { id: "sources", label: "Sources" },
+    { id: "data", label: "Data" },
+    { id: "about", label: "About" },
+  ];
+  activeSection = "general";
 
   constructor(
     private router: Router,
     public memory: MemoryService,
     private nav: Router,
     private modal: NgbModal,
+    private route: ActivatedRoute,
   ) {
     getVersion()
       .then((version) => (this.appVersion = version))
@@ -136,6 +147,14 @@ export class SettingsComponent {
         this.getSources();
       }),
     );
+    // The sidebar links to a section, e.g. settings#sources.
+    const fragment = this.route.snapshot.fragment;
+    if (fragment) setTimeout(() => this.scrollTo(fragment), 50);
+  }
+
+  scrollTo(id: string) {
+    this.activeSection = id;
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   addSource() {
@@ -195,6 +214,9 @@ export class SettingsComponent {
   }
 
   ngOnDestroy(): void {
+    // Fields without a change handler (zoom, port, mpv options) save when leaving the page,
+    // including through the sidebar.
+    this.updateSettings().catch((e) => console.error(e));
     this.subscriptions.forEach((x) => x.unsubscribe());
   }
 }

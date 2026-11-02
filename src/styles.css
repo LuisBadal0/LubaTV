@@ -1,41 +1,52 @@
 @import "./assets/css/bootstrap.min.css";
 @import "ngx-toastr/toastr";
 @import "@angular/material/prebuilt-themes/pink-bluegrey.css";
-@import "./assets/css/roboto.css";
+@import "@fontsource-variable/manrope";
 
 /* ------------------------------------------------------------------
- * LubaTV theme tokens
- * Colours follow the app icon: violet into pink on a near-black base.
+ * LubaTV "Lounge" theme tokens
+ * Graphite surfaces with the icon's violet-to-pink used for focus and
+ * active states only.
  * ------------------------------------------------------------------ */
 :root {
-  --lt-bg: #0f0f14;
-  --lt-bg-elevated: #15151c;
-  --lt-surface: #1c1c25;
-  --lt-surface-2: #252531;
-  --lt-surface-3: #2f2f3d;
-  --lt-border: rgba(255, 255, 255, 0.08);
-  --lt-border-strong: rgba(255, 255, 255, 0.16);
-  --lt-text: #f4f4f8;
-  --lt-text-muted: #a3a3b5;
-  --lt-text-subtle: #75758a;
+  --lt-bg: #0a0b10;
+  --lt-bg-elevated: #12141c;
+  --lt-sidebar: #0f1118;
+  --lt-surface: #151823;
+  --lt-surface-hover: #191d2a;
+  --lt-surface-2: #1c2030;
+  --lt-surface-3: #252a3c;
+  --lt-border: rgba(255, 255, 255, 0.07);
+  --lt-border-strong: rgba(255, 255, 255, 0.14);
+  --lt-border-hover: rgba(167, 139, 250, 0.45);
+  --lt-text: #eef0f6;
+  --lt-text-muted: #979db3;
+  --lt-text-subtle: #626980;
+  --lt-on-light: #0b0c12;
 
   --lt-accent: #8b5cf6;
   --lt-accent-strong: #7c3aed;
-  --lt-accent-soft: rgba(139, 92, 246, 0.16);
-  --lt-pink: #ec4899;
-  --lt-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
-  --lt-focus-ring: 0 0 0 3px rgba(139, 92, 246, 0.55);
+  --lt-accent-light: #a78bfa;
+  --lt-accent-soft: rgba(139, 92, 246, 0.18);
+  --lt-pink: #f0508a;
+  --lt-gradient: linear-gradient(90deg, #8b5cf6, #d946ef);
+  --lt-gradient-text: linear-gradient(90deg, #a78bfa, #f0508a);
+  --lt-gradient-vertical: linear-gradient(#8b5cf6, #f0508a);
+  --lt-active-bg: linear-gradient(90deg, rgba(139, 92, 246, 0.22), rgba(240, 80, 138, 0.05));
+  --lt-focus-ring: 0 0 0 3px rgba(139, 92, 246, 0.45);
 
+  --lt-live: #f43f5e;
   --lt-success: #22c55e;
   --lt-warning: #f59e0b;
   --lt-danger: #ef4444;
   --lt-favorite: #fbbf24;
 
+  --lt-sidebar-width: 216px;
   --lt-radius-sm: 8px;
   --lt-radius: 12px;
-  --lt-radius-lg: 18px;
+  --lt-radius-lg: 16px;
   --lt-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --lt-shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.5);
+  --lt-shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.55);
   --lt-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* Bootstrap 5.2 hooks */
@@ -46,9 +57,16 @@
   --bs-primary-rgb: 139, 92, 246;
   --bs-link-color: #a78bfa;
   --bs-link-hover-color: #c4b5fd;
-  --bs-body-font-family: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bs-body-font-family: "Manrope Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bs-body-font-weight: 500;
 
   color-scheme: dark;
+}
+
+@media (max-width: 899px) {
+  :root {
+    --lt-sidebar-width: 64px;
+  }
 }
 
 html {
@@ -69,18 +87,6 @@ body {
   background-color: var(--lt-bg);
   color: var(--lt-text);
   -webkit-font-smoothing: antialiased;
-}
-
-/* Ambient glow on its own fixed layer: background-attachment: fixed would repaint the
-   whole page on every scroll frame. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background: radial-gradient(1200px 500px at 10% -10%, rgba(99, 102, 241, 0.12), transparent 60%),
-    radial-gradient(900px 400px at 100% -5%, rgba(236, 72, 153, 0.08), transparent 60%);
 }
 
 ::-webkit-scrollbar {
@@ -125,8 +131,61 @@ h2,
 h3,
 h4,
 h5 {
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Keyboard hint, e.g. "Ctrl F" */
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--lt-border-strong);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  color: var(--lt-text-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* On/off switch: <input type="checkbox" class="lt-toggle"> */
+.lt-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 22px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--lt-surface-3);
+  cursor: pointer;
+}
+
+.lt-toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #8a90a6;
+  transition: left 0.15s ease;
+}
+
+.lt-toggle:checked {
+  background: linear-gradient(90deg, #8b5cf6, #c35bd0);
+}
+
+.lt-toggle:checked::after {
+  left: 21px;
+  background: #fff;
+}
+
+.lt-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--lt-focus-ring);
 }
 
 .selectable {
@@ -591,4 +650,28 @@ select.form-control {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Lounge: gradient primary buttons */
+.btn-primary {
+  background-image: var(--lt-gradient);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background-image: linear-gradient(90deg, #9b72f8, #e05bf2);
+}
+
+/* Lounge: icons in Material menus */
+.mat-mdc-menu-item app-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 12px;
+  color: var(--lt-text-muted);
+}
+
+.mat-mdc-menu-item .mdc-list-item__primary-text {
+  display: inline-flex !important;
+  align-items: center;
+  font-weight: 700 !important;
 }

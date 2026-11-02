@@ -27,6 +27,13 @@ export class SetupComponent {
   ) { }
   loading = false;
   sourceTypeEnum = SourceType;
+  readonly sourceTypes = [
+    { type: SourceType.M3ULink, icon: "link", label: "M3U link", hint: "Refreshes from your provider" },
+    { type: SourceType.M3U, icon: "file", label: "M3U file", hint: "A playlist on this computer" },
+    { type: SourceType.Xtream, icon: "key", label: "Xtream", hint: "Server, username and password" },
+    { type: SourceType.Custom, icon: "pen", label: "Custom", hint: "Build your own list" },
+    { type: SourceType.CustomImport, icon: "fileImport", label: "Import", hint: "A LubaTV source export" },
+  ];
   source: Source = {
     source_type: SourceType.M3U,
     enabled: true,
