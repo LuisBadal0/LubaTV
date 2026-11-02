@@ -1,0 +1,47 @@
+:host {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Separates the window buttons from the page's own buttons. */
+.controls::before {
+  content: "";
+  width: 1px;
+  height: 24px;
+  margin-right: 6px;
+  background: var(--lt-border);
+}
+
+.wc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--lt-text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.wc-btn:hover {
+  background: var(--lt-surface-2);
+  color: var(--lt-text);
+}
+
+.wc-btn svg {
+  width: 11px;
+  height: 11px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}

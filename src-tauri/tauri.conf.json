@@ -1,6 +1,6 @@
 {
   "productName": "LubaTV",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "identifier": "dev.luisbadalo.lubatv",
   "build": {
     "frontendDist": "../dist/lubatv/browser",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "LubaTV (v1.3.1)",
+        "title": "LubaTV (v1.3.2)",
         "width": 1100,
         "height": 720,
         "minWidth": 480,
@@ -19,7 +19,8 @@
         "backgroundColor": "#0f0f14",
         "resizable": true,
         "fullscreen": false,
-        "zoomHotkeysEnabled": true
+        "zoomHotkeysEnabled": true,
+        "decorations": false
       }
     ],
     "security": {

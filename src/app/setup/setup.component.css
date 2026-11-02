@@ -1,6 +1,14 @@
 .setup {
+  position: relative;
   display: flex;
   min-height: 100vh;
+}
+
+.window-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
 }
 
 .hero {
