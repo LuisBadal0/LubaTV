@@ -43,6 +43,8 @@ Download the latest version from [Releases](https://github.com/LuisBadal0/LubaTV
 
 The Windows installers are not code-signed yet, so SmartScreen may warn the first time: choose **More info → Run anyway**.
 
+**Updates:** on Windows, LubaTV checks for a new version when it starts and offers to install it. You can also check any time in **Settings → About → Check for updates**. Linux packages are updated through your package manager.
+
 ## Requirements
 
 LubaTV plays streams with **mpv**, uses **ffmpeg** to re-stream, and uses **yt-dlp** for some stream links.
@@ -99,6 +101,8 @@ npm run build:windows # Windows: .exe and .msi installers with the player files 
 ### Releasing
 
 Every merge to `main` builds the Windows installers and Linux packages. If the version is new, CI publishes them as GitHub release `v<version>` with notes listing the merged pull requests. To publish a release, bump the version in the same pull request, in all three of `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. CI fails if they differ. A merge that keeps an already-released version builds but publishes nothing.
+
+Releases also publish `latest.json` and signatures for the Windows installers, which the in-app updater uses. CI signs them with the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secrets; the matching public key is in `src-tauri/tauri.conf.json`. Keep a backup of the private key: without it, installed copies can't verify future updates.
 
 ### Player files on Windows
 

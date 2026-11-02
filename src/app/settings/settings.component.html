@@ -148,8 +148,21 @@
 
       <section class="group about" id="about">
         <h2>About</h2>
-        <p class="app-version">LubaTV <span *ngIf="appVersion">v{{ appVersion }}</span></p>
-        <p>
+        <div class="opt">
+          <div class="tx">
+            <b>LubaTV <ng-container *ngIf="appVersion">v{{ appVersion }}</ng-container></b>
+            <span>{{ updateStatus() }}</span>
+          </div>
+          <button *ngIf="updates.state === 'available'" type="button" class="btn btn-primary btn-sm"
+            (click)="updates.install()">
+            <app-icon name="download" />Update to {{ updates.version }}
+          </button>
+          <button *ngIf="updates.state !== 'available'" type="button" class="btn btn-secondary btn-sm"
+            [disabled]="updates.busy || !updates.supported" (click)="updates.check()">
+            <app-icon name="refresh" />{{ updates.state === "checking" ? "Checking…" : "Check for updates" }}
+          </button>
+        </div>
+        <p class="credit">
           Made by <a href="https://github.com/LuisBadal0/LubaTV" target="_blank">Luís Badalo</a>,
           forked from the original app by
           <a href="https://github.com/Fredolx" target="_blank">Frédéric Lachapelle</a>

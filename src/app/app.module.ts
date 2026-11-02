@@ -34,6 +34,7 @@ import { DownloadManagerComponent } from './download-manager/download-manager.co
 import { LegacyDataModalComponent } from './legacy-data-modal/legacy-data-modal.component';
 import { IconComponent } from './icon/icon.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
+import { UpdatePromptComponent } from './update-prompt/update-prompt.component';
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
 import { TimeUntilPipe } from './pipes/time-until.pipe';
@@ -68,6 +69,7 @@ import { TimeUntilPipe } from './pipes/time-until.pipe';
     LegacyDataModalComponent,
     IconComponent,
     SidebarComponent,
+    UpdatePromptComponent,
   ],
   imports: [
     BrowserModule,

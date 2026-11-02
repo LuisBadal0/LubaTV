@@ -11,6 +11,7 @@ import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
 import { ConfirmDeleteModalComponent } from "../confirm-delete-modal/confirm-delete-modal.component";
 import { SORT_TYPES, SortType, getSortTypeText } from "../models/sortType";
 import { getVersion } from "@tauri-apps/api/app";
+import { UpdateService } from "../update.service";
 
 @Component({
   selector: "app-settings",
@@ -54,6 +55,7 @@ export class SettingsComponent {
     private nav: Router,
     private modal: NgbModal,
     private route: ActivatedRoute,
+    public updates: UpdateService,
   ) {
     getVersion()
       .then((version) => (this.appVersion = version))
@@ -150,6 +152,28 @@ export class SettingsComponent {
     // The sidebar links to a section, e.g. settings#sources.
     const fragment = this.route.snapshot.fragment;
     if (fragment) setTimeout(() => this.scrollTo(fragment), 50);
+  }
+
+  updateStatus(): string {
+    const u = this.updates;
+    switch (u.state) {
+      case "unsupported":
+        return "On this system, updates come through your package manager";
+      case "checking":
+        return "Checking for updates…";
+      case "available":
+        return `Version ${u.version} is available`;
+      case "downloading":
+        return `Downloading version ${u.version}… ${u.progress}%`;
+      case "installing":
+        return "Installing. LubaTV will restart on its own.";
+      case "up-to-date":
+        return `You're up to date · checked at ${u.checkedAt?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+      case "error":
+        return "Couldn't check for updates. Check your connection and try again.";
+      default:
+        return "LubaTV checks for updates when it starts";
+    }
   }
 
   scrollTo(id: string) {

@@ -203,6 +203,10 @@ textarea {
   padding-bottom: 16px;
 }
 
+.about .opt {
+  padding-bottom: 6px;
+}
+
 .about p {
   padding: 0 20px;
   color: var(--lt-text-subtle);

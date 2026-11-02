@@ -1,6 +1,6 @@
 [package]
 name = "lubatv"
-version = "1.1.0"
+version = "1.2.0"
 description = "A fast, keyboard-friendly IPTV player"
 authors = ["Luís Badalo"]
 license = "GPL-2.0"
@@ -52,5 +52,7 @@ shell-words = "1.1.0"
 winsplit = "0.1.0"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = "2.3.6"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 [target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
 tauri = { version = "2.9.3", features = ["tray-icon"] }

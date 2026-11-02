@@ -1,5 +1,6 @@
-import { Component, HostListener } from "@angular/core";
+import { Component, HostListener, isDevMode } from "@angular/core";
 import { DownloadService } from "./download.service";
+import { UpdateService } from "./update.service";
 
 @Component({
   selector: "app-root",
@@ -9,7 +10,14 @@ import { DownloadService } from "./download.service";
 export class AppComponent {
   title = "lubatv";
 
-  constructor(private download: DownloadService) {}
+  constructor(
+    private download: DownloadService,
+    updates: UpdateService,
+  ) {
+    // Look for a newer release shortly after start-up, once the library has loaded.
+    // Development builds skip it; Settings > About can still check by hand.
+    if (!isDevMode()) setTimeout(() => updates.check(true), 8000);
+  }
 
   @HostListener("document:contextmenu", ["$event"])
   onRightClick(event: MouseEvent) {
