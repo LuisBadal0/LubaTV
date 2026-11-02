@@ -1,0 +1,24 @@
+<div class="update-card" *ngIf="visible" role="status">
+  <img src="assets/brand/lubatv-icon.svg" alt="" />
+  <div class="body">
+    <ng-container [ngSwitch]="updates.state">
+      <ng-container *ngSwitchCase="'available'">
+        <b>LubaTV {{ updates.version }} is available</b>
+        <span>It installs in a few seconds and LubaTV restarts.</span>
+        <div class="actions">
+          <button type="button" class="btn btn-primary btn-sm" (click)="updates.install()">Update now</button>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="updates.dismissed = true">Later</button>
+        </div>
+      </ng-container>
+      <ng-container *ngSwitchCase="'downloading'">
+        <b>Downloading LubaTV {{ updates.version }}…</b>
+        <div class="bar"><i [style.width.%]="updates.progress"></i></div>
+        <span>{{ updates.progress }}%</span>
+      </ng-container>
+      <ng-container *ngSwitchCase="'installing'">
+        <b>Installing LubaTV {{ updates.version }}…</b>
+        <span>LubaTV will restart on its own.</span>
+      </ng-container>
+    </ng-container>
+  </div>
+</div>

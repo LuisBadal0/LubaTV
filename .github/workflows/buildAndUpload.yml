@@ -89,8 +89,18 @@ jobs:
 
       - name: Build Windows installers
         if: matrix.os == 'windows-latest'
+        env:
+          # Signs the installers for the in-app updater (see plugins.updater in tauri.conf.json).
+          # Missing on pull requests from forks; those builds are left unsigned.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
-          npm run build:windows
+          if ($env:TAURI_SIGNING_PRIVATE_KEY) {
+            npm run build:windows -- --config src-tauri/tauri.updater.conf.json
+          } else {
+            Write-Host "::warning::No updater signing key; building unsigned installers"
+            npm run build:windows
+          }
 
       - name: Build Linux packages
         if: matrix.os == 'ubuntu-22.04'
@@ -104,7 +114,9 @@ jobs:
           name: lubatv-windows
           path: |
             src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/nsis/*.exe.sig
             src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/msi/*.msi.sig
           if-no-files-found: error
           retention-days: 60
 
@@ -161,16 +173,39 @@ jobs:
             exit 1
           fi
           printf '%s\n' "${files[@]}"
+
+          # latest.json tells installed copies about this version (the updater endpoint is
+          # releases/latest/download/latest.json). It needs the installers' signatures.
+          nsis=$(find installers -type f -name "*-setup.exe" | head -1)
+          msi=$(find installers -type f -name "*.msi" | head -1)
+          extra=()
+          if [ -f "$nsis.sig" ] && [ -f "$msi.sig" ]; then
+            base="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}"
+            jq -n \
+              --arg version "${TAG#v}" \
+              --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              --arg notes "See https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" \
+              --arg nsisUrl "$base/$(basename "$nsis")" --arg nsisSig "$(cat "$nsis.sig")" \
+              --arg msiUrl "$base/$(basename "$msi")" --arg msiSig "$(cat "$msi.sig")" \
+              '{version: $version, notes: $notes, pub_date: $date, platforms: {
+                 "windows-x86_64": {signature: $nsisSig, url: $nsisUrl},
+                 "windows-x86_64-nsis": {signature: $nsisSig, url: $nsisUrl},
+                 "windows-x86_64-msi": {signature: $msiSig, url: $msiUrl}}}' > latest.json
+            cat latest.json
+            extra=(latest.json "$nsis.sig" "$msi.sig")
+          else
+            echo "::warning::No updater signatures; this release will not reach installed copies automatically"
+          fi
           cat > notes.md <<'EOF'
           ## Install
 
-          - **Windows:** run `LubaTV_*_x64-setup.exe` (installs for your user, no admin needed) or the `.msi` (installs for all users). mpv, ffmpeg and yt-dlp are included. The installers are not code-signed yet, so Windows SmartScreen may warn: choose **More info → Run anyway**.
+          - **Windows:** run `LubaTV_*_x64-setup.exe` (installs for your user, no admin needed) or the `.msi` (installs for all users). mpv, ffmpeg and yt-dlp are included. The installers are not code-signed yet, so Windows SmartScreen may warn: choose **More info → Run anyway**. From v1.2.0, LubaTV offers new versions itself; you can also use **Settings → About → Check for updates**.
           - **Debian / Ubuntu:** `sudo apt install ./LubaTV_*_amd64.deb`
           - **Fedora / openSUSE:** install the `.rpm` with your package manager.
 
           On Linux, mpv, ffmpeg and yt-dlp come from your distribution.
           EOF
-          gh release create "$TAG" "${files[@]}" \
+          gh release create "$TAG" "${files[@]}" "${extra[@]}" \
             --target "$GITHUB_SHA" \
             --title "LubaTV $TAG" \
             --notes-file notes.md \

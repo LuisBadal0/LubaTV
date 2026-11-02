@@ -1,0 +1,60 @@
+.update-card {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 1060;
+  display: flex;
+  gap: 14px;
+  width: 340px;
+  padding: 16px;
+  background: var(--lt-surface-2);
+  border: 1px solid var(--lt-border-strong);
+  border-radius: 16px;
+  box-shadow: var(--lt-shadow-lg);
+}
+
+.update-card img {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+b {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+span {
+  color: var(--lt-text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.bar {
+  height: 6px;
+  margin: 8px 0 2px;
+  border-radius: 6px;
+  background: var(--lt-surface-3);
+  overflow: hidden;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  background: var(--lt-gradient);
+  transition: width 0.2s ease;
+}
