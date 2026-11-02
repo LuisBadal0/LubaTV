@@ -260,7 +260,7 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
     try {
       await invoke("play", { channel: this.channel, record: record, recordPath: file });
     } catch (e) {
-      this.error.handleError(e);
+      this.error.handlePlayError(e);
     }
     invoke("add_last_watched", { id: this.channel?.id }).catch((e) => {
       console.error(e);
