@@ -21,7 +21,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 0;
+  /* Short titles stay whole; long ones truncate once the search box is at its narrowest. */
+  min-width: min(12rem, 40%);
   flex: 1 1 auto;
 }
 

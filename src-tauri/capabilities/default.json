@@ -19,6 +19,11 @@
     "notification:default",
     "core:webview:allow-set-webview-zoom",
     "updater:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-internal-toggle-maximize",
+    "core:window:allow-close",
+    "core:window:allow-start-dragging"
   ]
 }

@@ -1,5 +1,6 @@
 <div class="setup">
-  <aside class="hero">
+  <app-window-controls class="window-controls" />
+  <aside class="hero" data-tauri-drag-region>
     <img src="assets/brand/lubatv-icon.svg" alt="" class="hero-icon" />
     <h1 *ngIf="!memory.AddingAdditionalSource">Your TV,<br />all in one place.</h1>
     <h1 *ngIf="memory.AddingAdditionalSource">Add another<br />source.</h1>

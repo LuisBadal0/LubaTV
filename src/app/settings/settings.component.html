@@ -1,11 +1,12 @@
 <app-sidebar active="settings"></app-sidebar>
 
 <main class="content">
-  <header class="topbar">
-    <div>
-      <h1>Settings</h1>
-      <p class="subtitle">Changes save automatically</p>
+  <header class="topbar" data-tauri-drag-region>
+    <div data-tauri-drag-region>
+      <h1 data-tauri-drag-region>Settings</h1>
+      <p class="subtitle" data-tauri-drag-region>Changes save automatically</p>
     </div>
+    <app-window-controls />
   </header>
 
   <div class="settings-layout">

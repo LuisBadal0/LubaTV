@@ -1,3 +1,6 @@
 <router-outlet></router-outlet>
 <app-download-manager *ngIf="showDownloadManager()"></app-download-manager>
 <app-update-prompt></app-update-prompt>
+<app-window-controls *ngIf="controlsOverDialog as at" class="over-dialog" [style.top.px]="at.top"
+  [style.left.px]="at.left" />
+

@@ -1,0 +1,5 @@
+/* Above Bootstrap's dialog (1055) and its backdrop (1050). */
+.over-dialog {
+  position: fixed;
+  z-index: 1056;
+}

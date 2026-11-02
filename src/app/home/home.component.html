@@ -4,16 +4,16 @@
 <app-sidebar [active]="filters?.view_type" (selectView)="switchMode($event)"></app-sidebar>
 
 <main class="content">
-  <header class="topbar">
-    <div class="title">
+  <header class="topbar" data-tauri-drag-region>
+    <div class="title" data-tauri-drag-region>
       <button *ngIf="nodeStack.hasNodes()" type="button" class="lt-icon-btn back-btn" (click)="goBack()"
         title="Back (Esc)">
         <app-icon name="back" />
       </button>
-      <div class="title-text">
-        <p class="crumb" *ngIf="nodeStack.hasNodes()">{{ viewTitle() }}</p>
-        <h1 [title]="pageTitle()">{{ pageTitle() }}</h1>
-        <p class="subtitle" *ngIf="!nodeStack.hasNodes()">{{ pageSubtitle() }}</p>
+      <div class="title-text" data-tauri-drag-region>
+        <p class="crumb" *ngIf="nodeStack.hasNodes()" data-tauri-drag-region>{{ viewTitle() }}</p>
+        <h1 [title]="pageTitle()" data-tauri-drag-region>{{ pageTitle() }}</h1>
+        <p class="subtitle" *ngIf="!nodeStack.hasNodes()" data-tauri-drag-region>{{ pageSubtitle() }}</p>
       </div>
     </div>
 
@@ -46,6 +46,7 @@
           [disabled]="filters?.view_type == viewModeEnum.Categories"><app-icon name="starOff" />Unfavorite all</button>
       </mat-menu>
     </div>
+    <app-window-controls />
   </header>
 
   <div class="chips" *ngIf="filtersVisible()">
