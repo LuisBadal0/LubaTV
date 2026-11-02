@@ -269,19 +269,16 @@ pub fn get_bin(bin: &str) -> String {
     } else if OS == "macos" {
         return find_macos_bin(bin);
     }
-    return get_bin_from_deps(bin);
-}
-
-fn get_bin_from_deps(bin: &str) -> String {
-    let mut path = deps_dir();
-    path.push(bin);
-    return path.to_string_lossy().to_string();
+    // Windows: the player files LubaTV keeps up to date (see player_files).
+    crate::player_files::path(&format!("{bin}.exe"))
+        .to_string_lossy()
+        .to_string()
 }
 
 /// Folder with the bundled players. Installers put mpv, ffmpeg and yt-dlp in a `deps`
 /// folder next to the executable.
 #[cfg(not(debug_assertions))]
-fn deps_dir() -> PathBuf {
+pub(crate) fn deps_dir() -> PathBuf {
     let mut path = std::env::current_exe().unwrap();
     path.pop();
     path.push("deps");
@@ -291,7 +288,7 @@ fn deps_dir() -> PathBuf {
 /// Development builds run from Cargo's target folder, so they use the project's
 /// `src-tauri/deps` instead (filled by `scripts/fetch-windows-deps.ps1`).
 #[cfg(debug_assertions)]
-fn deps_dir() -> PathBuf {
+pub(crate) fn deps_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("deps")
 }
 
@@ -400,14 +397,15 @@ pub fn get_user_agent_from_source(source: &Source) -> Result<String> {
 
 #[cfg(test)]
 mod test_utils {
-    use super::{get_bin_from_deps, sanitize};
+    use super::sanitize;
 
     #[test]
     fn test_dev_deps_dir() {
+        // Development builds use src-tauri/deps as it is.
         let expected = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("deps")
-            .join("mpv");
-        assert_eq!(get_bin_from_deps("mpv"), expected.to_string_lossy());
+            .join("mpv.exe");
+        assert_eq!(crate::player_files::path("mpv.exe"), expected);
     }
 
     #[test]

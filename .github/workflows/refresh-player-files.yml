@@ -1,0 +1,93 @@
+name: Refresh player files
+
+# Pins newer builds of the Windows player files (mpv and its Vulkan loader, ffmpeg, yt-dlp).
+# Only files whose checksum changed are published, as a new player-files-<date> release,
+# and a branch updating src-tauri/player-files.json is pushed. Open a pull request from it
+# (the link is in the run summary) and bump the version to ship the new files: installers
+# include them, and installed copies download only the files that changed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      files:
+        description: Which player files to refresh
+        type: choice
+        options: [yt-dlp, mpv, ffmpeg, all]
+        default: yt-dlp
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: windows-latest
+    env:
+      # Lets the download script fall back to the GitHub API when nightly.link is unavailable.
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the newest builds
+        shell: pwsh
+        run: ./scripts/fetch-windows-deps.ps1 -Latest -Force
+
+      - name: Publish the changed files and pin them
+        shell: pwsh
+        run: |
+          $choice = "${{ inputs.files }}"
+          $groups = @{
+            "yt-dlp" = @("yt-dlp.exe")
+            "mpv"    = @("mpv.exe", "vulkan-1.dll")
+            "ffmpeg" = @("ffmpeg.exe")
+            "all"    = @("mpv.exe", "vulkan-1.dll", "ffmpeg.exe", "yt-dlp.exe")
+          }
+          $tag = "player-files-" + (Get-Date -Format "yyyy.MM.dd-HHmm")
+          $lockPath = "src-tauri/player-files.json"
+          $lock = Get-Content $lockPath -Raw | ConvertFrom-Json
+          New-Item -ItemType Directory out | Out-Null
+
+          $changed = @()
+          foreach ($name in $groups[$choice]) {
+            $path = "src-tauri/deps/$name"
+            $sha = (Get-FileHash -Algorithm SHA256 $path).Hash.ToLowerInvariant()
+            if ($sha -eq $lock.files.$name.sha256) {
+              Write-Host "$name is unchanged"
+              continue
+            }
+            $gz = "out/$name.gz"
+            $in = [IO.File]::OpenRead((Resolve-Path $path))
+            $file = [IO.File]::Create((Join-Path (Resolve-Path out) "$name.gz"))
+            $zip = New-Object IO.Compression.GZipStream($file, [IO.Compression.CompressionLevel]::SmallestSize)
+            try { $in.CopyTo($zip) } finally { $zip.Dispose(); $file.Dispose(); $in.Dispose() }
+            $lock.files.$name = [ordered]@{
+              sha256        = $sha
+              size          = (Get-Item $path).Length
+              download_size = (Get-Item $gz).Length
+              release       = $tag
+            }
+            $changed += $name
+          }
+          if (-not $changed) {
+            "No changes: the newest $choice build is already pinned." >> $env:GITHUB_STEP_SUMMARY
+            exit 0
+          }
+
+          $notes = "Player files for LubaTV on Windows, gzip-compressed: $($changed -join ', '). LubaTV downloads them only when its copies differ from the checksums in src-tauri/player-files.json. This is not an app release; download LubaTV from the latest v* release."
+          gh release create $tag (Get-ChildItem out/*.gz).FullName --target $env:GITHUB_SHA --title "Player files $tag" --notes $notes --latest=false
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          ($lock | ConvertTo-Json -Depth 5) + "`n" | Set-Content $lockPath -NoNewline
+          $branch = "chore/$tag"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c $branch
+          git commit -am "Pin new player files: $($changed -join ', ')"
+          git push origin $branch
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          @(
+            "Published **$tag** with $($changed -join ', ')."
+            ""
+            "Open a pull request: https://github.com/$env:GITHUB_REPOSITORY/compare/main...$($branch)?expand=1"
+            ""
+            "Bump the version in the same pull request to ship the new player files."
+          ) -join "`n" >> $env:GITHUB_STEP_SUMMARY

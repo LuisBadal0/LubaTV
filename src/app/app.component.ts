@@ -1,6 +1,7 @@
 import { Component, HostListener, isDevMode } from "@angular/core";
 import { DownloadService } from "./download.service";
 import { UpdateService } from "./update.service";
+import { PlayerFilesService } from "./player-files.service";
 
 @Component({
   selector: "app-root",
@@ -13,7 +14,10 @@ export class AppComponent {
   constructor(
     private download: DownloadService,
     updates: UpdateService,
+    player: PlayerFilesService,
   ) {
+    // Updates don't include the player files; get the ones that changed.
+    player.ensure();
     // Look for a newer release shortly after start-up, once the library has loaded.
     // Development builds skip it; Settings > About can still check by hand.
     if (!isDevMode()) setTimeout(() => updates.check(true), 8000);

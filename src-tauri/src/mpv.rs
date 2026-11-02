@@ -75,7 +75,10 @@ const HTTP_REFERRER: &str = "referer:";
 /// Error output kept per channel (the most recent part), so a long-running stream can't
 /// grow it without bound.
 const MAX_OUTPUT: usize = 16 * 1024;
-static MPV_PATH: LazyLock<String> = LazyLock::new(|| get_bin(MPV_BIN_NAME));
+/// Looked up for each window: on Windows, a newer mpv may have been downloaded meanwhile.
+fn mpv_path() -> String {
+    get_bin(MPV_BIN_NAME)
+}
 static YTDLP_PATH: LazyLock<String> = LazyLock::new(|| find_macos_bin(YTDLP_BIN_NAME));
 
 /// The open mpv windows.
@@ -244,12 +247,13 @@ struct Window {
 impl Window {
     fn open(args: &PlayArgs, owner: Owner) -> Result<Arc<Window>> {
         let ipc_path = ipc::path(NEXT_ID.fetch_add(1, Ordering::Relaxed));
-        let mut child = Command::new(MPV_PATH.clone())
+        let mpv = mpv_path();
+        let mut child = Command::new(&mpv)
             .args(args.command_line(&ipc_path))
             .stdout(Stdio::piped())
             .kill_on_drop(true)
             .spawn()
-            .with_context(|| bin_start_error(MPV_BIN_NAME, &MPV_PATH))?;
+            .with_context(|| bin_start_error(MPV_BIN_NAME, &mpv))?;
         let stdout = child.stdout.take();
         let window = Arc::new(Window {
             ipc_path,
@@ -514,7 +518,7 @@ fn get_play_args(
         global.push(ARG_GPU_NEXT.to_string());
         global.push(ARG_GPU_PROFILE_HIGH_QUALITY.to_string());
     }
-    if OS == "macos" && *MPV_PATH != MPV_BIN_NAME {
+    if OS == "macos" && mpv_path() != MPV_BIN_NAME {
         global.push(format!("{}{}", ARG_YTDLP_PATH, *YTDLP_PATH));
     }
     global.push(ARG_MSG_LEVEL.to_string());

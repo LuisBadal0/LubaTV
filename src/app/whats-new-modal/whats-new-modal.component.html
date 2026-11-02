@@ -2,6 +2,12 @@
   <h4 class="modal-title lbl">What's new in LubaTV v{{ memory.AppVersion }}</h4>
 </div>
 <div class="modal-body">
+  <h3>Much smaller updates</h3>
+  <ul>
+    <li>Updates now download about 10 MB instead of about 100 MB: they no longer include mpv, ffmpeg and yt-dlp</li>
+    <li>LubaTV downloads those only when a new version of one of them is out, and only the ones that changed</li>
+    <li>Each one is checked against its published checksum before it's used</li>
+  </ul>
   <h3>A cleaner window</h3>
   <ul>
     <li>Minimize, maximize and close now sit in LubaTV's own header instead of a separate title bar</li>

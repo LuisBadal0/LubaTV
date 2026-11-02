@@ -26,6 +26,7 @@ pub mod log;
 pub mod m3u;
 pub mod media_type;
 pub mod mpv;
+pub mod player_files;
 pub mod restream;
 pub mod settings;
 pub mod share;
@@ -122,7 +123,9 @@ pub fn run() {
             hide_channel,
             hide_group,
             remove_from_history,
-            get_all_expiries
+            get_all_expiries,
+            player_files_status,
+            sync_player_files
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState {
@@ -202,6 +205,27 @@ fn build_tray_icon(app: &mut tauri::App) -> anyhow::Result<()> {
         .icon(app.default_window_icon().unwrap().clone())
         .build(app)?;
     Ok(())
+}
+
+/// What LubaTV needs to copy or download to have current player files (Windows only).
+#[tauri::command]
+async fn player_files_status() -> Result<player_files::Status, String> {
+    if !cfg!(target_os = "windows") {
+        return Ok(Default::default());
+    }
+    tauri::async_runtime::spawn_blocking(player_files::check)
+        .await
+        .map_err(|e| e.to_string())?
+        .map_err(map_err_frontend)
+}
+
+/// Copies and downloads the player files that are missing or outdated (Windows only).
+#[tauri::command]
+async fn sync_player_files(app: AppHandle) -> Result<player_files::Status, String> {
+    if !cfg!(target_os = "windows") {
+        return Ok(Default::default());
+    }
+    player_files::sync(app).await.map_err(map_err_frontend)
 }
 
 fn map_err_frontend(e: Error) -> String {

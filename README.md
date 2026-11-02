@@ -43,7 +43,7 @@ Download the latest version from [Releases](https://github.com/LuisBadal0/LubaTV
 
 The Windows installers are not code-signed yet, so SmartScreen may warn the first time: choose **More info → Run anyway**.
 
-**Updates:** on Windows, LubaTV checks for a new version when it starts and offers to install it. You can also check any time in **Settings → About → Check for updates**. Linux packages are updated through your package manager.
+**Updates:** on Windows, LubaTV checks for a new version when it starts and offers to install it. You can also check any time in **Settings → About → Check for updates**. Updates are about 10 MB: they leave out mpv, ffmpeg and yt-dlp, which LubaTV downloads separately and only when one of them changes. Linux packages are updated through your package manager.
 
 ## Requirements
 
@@ -104,17 +104,23 @@ npm run build:windows # Windows: .exe and .msi installers with the player files 
 
 Every merge to `main` builds the Windows installers and Linux packages. If the version is new, CI publishes them as GitHub release `v<version>` with notes listing the merged pull requests. To publish a release, bump the version in the same pull request, in all three of `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. CI fails if they differ. A merge that keeps an already-released version builds but publishes nothing.
 
-Releases also publish `latest.json` and signatures for the Windows installers, which the in-app updater uses. CI signs them with the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secrets; the matching public key is in `src-tauri/tauri.conf.json`. Keep a backup of the private key: without it, installed copies can't verify future updates.
+Releases also publish update installers (`-update.exe` and `-update.msi`), their signatures and `latest.json`, which the in-app updater uses. The update installers are the same app without the player files. CI signs them with the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secrets; the matching public key is in `src-tauri/tauri.conf.json`. Keep a backup of the private key: without it, installed copies can't verify future updates.
 
 ### Player files on Windows
 
-Installers ship mpv, ffmpeg and yt-dlp in a `deps` folder next to the app. Development builds look in `src-tauri/deps` instead. Fill it once with:
+mpv (with its Vulkan loader), ffmpeg and yt-dlp are pinned in `src-tauri/player-files.json`: the SHA-256 of each file and the `player-files-*` release of this repository that has it, gzip-compressed.
+
+- **Installers** ship them in a `deps` folder next to the app.
+- **Updates** don't. When LubaTV starts, it checks its copies against the pinned checksums and only gets the files that are missing or different: copied from `deps` when a copy there matches, otherwise downloaded into `%LOCALAPPDATA%\luisbadalo\lubatv\data\player` and checked before use. mpv, `vulkan-1.dll` and yt-dlp are always used from the same folder.
+- **New builds:** run the **Refresh player files** workflow (Actions tab) and pick yt-dlp, mpv, ffmpeg or all. It publishes the files that changed as a new `player-files-*` release and pushes a branch that updates `player-files.json`; open a pull request from it and bump the version to ship them.
+
+Development builds use `src-tauri/deps`. Fill it once with:
 
 ```
 ./scripts/fetch-windows-deps.ps1
 ```
 
-The script copies the files from an installed LubaTV if it finds one, and otherwise downloads the same builds the release workflow uses. `-Download` forces a download, and `-Force` replaces existing files. The folder is git-ignored because the binaries are large. An mpv found on your `PATH` is still used first.
+The script gets the pinned files: it keeps matching ones already there, copies matching ones from an installed LubaTV, and downloads the rest. Every file is checked against its checksum. `-Download` skips the installed copy, `-Force` replaces files, and `-Latest` gets the newest upstream builds instead (what the refresh workflow uses). The folder is git-ignored because the binaries are large. An mpv found on your `PATH` is still used first.
 
 ## Where LubaTV keeps its data
 
@@ -130,7 +136,7 @@ If something stays broken after an update, **Settings → Delete everything** re
 
 ## Privacy
 
-LubaTV has no accounts, analytics or telemetry. It connects to the IPTV sources you add, the stream and logo addresses they list, and, when you re-stream, to [ipify](https://www.ipify.org/) to find your public IP address for the share link.
+LubaTV has no accounts, analytics or telemetry. It connects to the IPTV sources you add, the stream and logo addresses they list, and, when you re-stream, to [ipify](https://www.ipify.org/) to find your public IP address for the share link. On Windows, it also checks GitHub for new versions and downloads player files from this repository's releases when they change.
 
 ## Credits
 

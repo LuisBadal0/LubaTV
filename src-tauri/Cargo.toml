@@ -1,6 +1,6 @@
 [package]
 name = "lubatv"
-version = "1.3.2"
+version = "1.4.0"
 description = "A fast, keyboard-friendly IPTV player"
 authors = ["Luís Badalo"]
 license = "GPL-2.0"
@@ -46,6 +46,9 @@ if-addrs = "0.13.4"
 tokio-util = "0.7.17"
 indexmap = "2.12.1"
 futures = "0.3.32"
+sha2 = "0.10"
+flate2 = "1"
+hex = "0.4"
 [target.'cfg(any(target_os = "linux", target_os = "macos"))'.dependencies]
 shell-words = "1.1.0"
 [target.'cfg(target_os = "windows")'.dependencies]
