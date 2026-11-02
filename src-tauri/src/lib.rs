@@ -78,6 +78,8 @@ pub fn run() {
             toggle_source,
             delete_database,
             get_legacy_data,
+            group_previews,
+            last_watched_times,
             resolve_legacy_data,
             add_custom_channel,
             get_custom_channel_extra_data,
@@ -326,6 +328,16 @@ fn toggle_source(value: bool, source_id: i64) -> Result<(), String> {
 #[tauri::command(async)]
 fn delete_database() -> Result<(), String> {
     utils::create_nuke_request().map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn group_previews(ids: Vec<i64>) -> Result<HashMap<i64, types::GroupPreview>, String> {
+    sql::group_previews(ids).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn last_watched_times(ids: Vec<i64>) -> Result<HashMap<i64, i64>, String> {
+    sql::last_watched_times(ids).map_err(map_err_frontend)
 }
 
 #[tauri::command(async)]

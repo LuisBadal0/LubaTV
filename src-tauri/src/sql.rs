@@ -1784,6 +1784,47 @@ pub fn analyze(tx: &Transaction) -> Result<()> {
     Ok(())
 }
 
+/// Item counts and up to three logos for each category tile on screen.
+pub fn group_previews(ids: Vec<i64>) -> Result<HashMap<i64, crate::types::GroupPreview>> {
+    let sql = get_conn()?;
+    let mut count_stmt =
+        sql.prepare_cached("SELECT COUNT(*) FROM channels WHERE group_id = ? AND hidden = 0")?;
+    let mut image_stmt = sql.prepare_cached(
+        "SELECT image FROM channels WHERE group_id = ? AND hidden = 0 AND image IS NOT NULL AND image != '' LIMIT 3",
+    )?;
+    let mut previews = HashMap::with_capacity(ids.len());
+    // A page holds 36 tiles; the cap only guards against misuse.
+    for id in ids.into_iter().take(200) {
+        let count: i64 = count_stmt.query_row([id], |row| row.get(0))?;
+        let images = image_stmt
+            .query_map([id], |row| row.get::<_, String>(0))?
+            .filter_map(Result::ok)
+            .collect();
+        previews.insert(id, crate::types::GroupPreview { count, images });
+    }
+    Ok(previews)
+}
+
+/// When each channel was last watched (Unix seconds), for the Continue watching row.
+pub fn last_watched_times(ids: Vec<i64>) -> Result<HashMap<i64, i64>> {
+    if ids.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let sql = get_conn()?;
+    let query = format!(
+        "SELECT id, last_watched FROM channels WHERE id IN ({}) AND last_watched IS NOT NULL",
+        generate_placeholders(ids.len())
+    );
+    let times = sql
+        .prepare(&query)?
+        .query_map(params_from_iter(ids.iter()), |row| {
+            Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?))
+        })?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(times)
+}
+
 pub fn add_last_watched(id: i64) -> Result<()> {
     let sql = get_conn()?;
     sql.execute(

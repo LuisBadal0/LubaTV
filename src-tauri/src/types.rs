@@ -210,3 +210,10 @@ pub struct ChannelPreserve {
     #[serde(default)]
     pub is_group: bool,
 }
+
+/// What a category tile shows: how many visible items it holds and a few of their logos.
+#[derive(Clone, PartialEq, Debug, Serialize)]
+pub struct GroupPreview {
+    pub count: i64,
+    pub images: Vec<String>,
+}
