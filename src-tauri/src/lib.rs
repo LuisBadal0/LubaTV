@@ -158,6 +158,7 @@ pub fn run() {
                 let _ = window.show();
                 let _ = window.set_focus();
             }
+            tauri::RunEvent::Exit => mpv::close_all(),
             _ => {}
         });
 }

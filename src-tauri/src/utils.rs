@@ -184,23 +184,34 @@ pub async fn remove_from_play_stop(
 }
 
 pub async fn handle_max_streams(source: &Source, state: &State<'_, Mutex<AppState>>) -> Result<()> {
+    if let Some((_, token)) = take_oldest_stream(source, state).await? {
+        token.cancel();
+    }
+    Ok(())
+}
+
+/// When the source is at its stream limit, removes its oldest stream (a playback or a
+/// download) and returns its key and token without stopping it. The caller must cancel
+/// the token, after taking over the stream's player window if it wants to.
+pub async fn take_oldest_stream(
+    source: &Source,
+    state: &State<'_, Mutex<AppState>>,
+) -> Result<Option<(String, CancellationToken)>> {
     let max_streams = source.max_streams.unwrap_or(1);
     let mut guard = state.lock().await;
-    let channels = guard
+    let Some(channels) = guard
         .play_stop
-        .get_mut(source.id.as_ref().context("no id")?);
-    if channels.is_none() {
-        return Ok(());
-    }
-    let channels = channels.context("no channels")?;
+        .get_mut(source.id.as_ref().context("no id")?)
+    else {
+        return Ok(None);
+    };
     if channels.len() < max_streams.into() {
-        return Ok(());
+        return Ok(None);
     }
-    let (_, token) = channels
+    let oldest = channels
         .shift_remove_index(0)
         .context("failed to remove channel from indexMap")?;
-    token.cancel();
-    Ok(())
+    Ok(Some(oldest))
 }
 
 pub async fn insert_play_token(
