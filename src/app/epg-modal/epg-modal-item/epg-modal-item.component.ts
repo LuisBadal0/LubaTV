@@ -97,7 +97,7 @@ export class EpgModalItemComponent implements OnDestroy {
       });
     } catch (e) {
       console.error(e);
-      this.error.handleError(e);
+      this.error.handlePlayError(e);
     } finally {
       this.playing = false;
     }

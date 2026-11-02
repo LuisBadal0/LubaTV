@@ -27,6 +27,16 @@ export class ErrorService {
       .subscribe(() => this.showError(error));
   }
 
+  /**
+   * For errors from playing a channel. Their first line is a readable summary
+   * ("The provider refused this channel (HTTP 403)"), shown in the notification;
+   * the rest (what to try, and mpv's output) is in the details.
+   */
+  public handlePlayError(e: any) {
+    const summary = typeof e === "string" ? e.split("\n", 1)[0].trim() : "";
+    this.handleError(e, summary && summary.length <= 120 ? summary : undefined);
+  }
+
   private showError(error: string) {
     const modalRef = this.modal.open(ErrorModalComponent, { backdrop: "static", size: "xl" });
     modalRef.componentInstance.name = "ErrorModal";
