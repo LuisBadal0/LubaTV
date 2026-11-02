@@ -23,7 +23,7 @@
 - **Re-stream** a channel to other devices on your network
 - **Custom channels and groups** that you can export and share
 - **Keyboard and TV-remote navigation**
-- Playback through [mpv](https://mpv.io/), with optional hardware decoding and GPU rendering
+- Playback through [mpv](https://mpv.io/), with optional hardware decoding and GPU rendering. Switching channels reuses the open player window, so it's quick and keeps the window where you put it
 
 | Categories | Settings |
 |---|---|
@@ -82,6 +82,8 @@ On macOS, Cmd works in place of Ctrl for search and the views.
 ## Settings worth knowing
 
 **Stream caching:** turn it on if your connection or provider makes streams pause often. Turn it off for lower latency, or if streams drop completely and jump ahead or behind when they recover.
+
+**Max Streams** (per source, in Settings → Sources) decides whether a new channel replaces the one playing. At the default of 1, the new channel plays in the same mpv window; with a higher limit, each channel gets its own window until the limit is reached.
 
 **Hardware acceleration** adds `hwdec=auto` to mpv. **Modern hardware optimizations** adds `--vo=gpu-next --profile=high-quality` for HDR and higher-quality GPU rendering. Anything else can go in **Global MPV parameters**.
 
