@@ -1,36 +1,25 @@
 :host {
   display: flex;
-  flex: 0 0 auto;
 }
 
 .controls {
   display: flex;
-  align-items: center;
-  gap: 4px;
 }
 
-/* Separates the window buttons from the page's own buttons. */
-.controls::before {
-  content: "";
-  width: 1px;
-  height: 24px;
-  margin-right: 6px;
-  background: var(--lt-border);
-}
-
+/* Square and flush with the window's top and right edges, like a system title bar. */
 .wc-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.1rem;
-  height: 2.1rem;
+  width: var(--lt-window-control-width);
+  height: var(--lt-window-controls-height);
   padding: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: 0;
   background: transparent;
   color: var(--lt-text-muted);
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .wc-btn:hover {
@@ -38,10 +27,19 @@
   color: var(--lt-text);
 }
 
+.wc-btn.close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+.wc-btn.close:active {
+  background: #a3261a;
+}
+
 .wc-btn svg {
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.2;
+  stroke-width: 1.1;
 }

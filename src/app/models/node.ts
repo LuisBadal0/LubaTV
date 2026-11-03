@@ -1,5 +1,6 @@
 import { NodeType } from "./nodeType";
 import { ViewMode } from "./viewMode";
+import { pageScroller } from "../page-scroll";
 
 export class Node {
   readonly id: number;
@@ -15,7 +16,7 @@ export class Node {
     this.name = name;
     this.type = type;
     this.query = query;
-    this.scrollPosition = window.scrollY;
+    this.scrollPosition = pageScroller().scrollTop;
     this.fromViewType = fromViewType;
   }
 

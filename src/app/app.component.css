@@ -1,5 +1,22 @@
-/* Above Bootstrap's dialog (1055) and its backdrop (1050). */
-.over-dialog {
+/* The pages scroll here rather than the window (see page-scroll.ts). */
+.page-scroll {
   position: fixed;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  /* The standard scrollbar properties (inherited from html) would turn off the track margin below. */
+  scrollbar-color: auto;
+}
+
+/* The scrollbar starts under the window buttons instead of beside them. */
+.page-scroll::-webkit-scrollbar-track {
+  margin-top: var(--lt-window-controls-height);
+}
+
+/* In the window's top-right corner, above every page and dialog (Bootstrap's is 1055). */
+.window-controls {
+  position: fixed;
+  top: 0;
+  right: 0;
   z-index: 1056;
 }
