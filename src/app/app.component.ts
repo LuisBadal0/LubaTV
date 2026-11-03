@@ -39,30 +39,4 @@ export class AppComponent {
   showDownloadManager() {
     return this.download.Downloads.size > 0;
   }
-
-  /**
-   * Where to show the window buttons above an open dialog, which otherwise covers the
-   * ones in the page header (the window has no system title bar to fall back on).
-   */
-  controlsOverDialog?: { top: number; left: number };
-
-  ngOnInit() {
-    new MutationObserver(() => this.placeControlsOverDialog()).observe(document.body, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-  }
-
-  @HostListener("window:resize")
-  placeControlsOverDialog() {
-    const dialogOpen = document.body.classList.contains("modal-open");
-    const inPage = document.querySelector("app-window-controls:not(.over-dialog)");
-    if (!dialogOpen || !inPage) {
-      this.controlsOverDialog = undefined;
-      return;
-    }
-    const rect = inPage.getBoundingClientRect();
-    // From the left: the page's scrollbar would shift a position taken from the right.
-    this.controlsOverDialog = { top: rect.top, left: rect.left };
-  }
 }

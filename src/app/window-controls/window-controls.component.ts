@@ -3,7 +3,8 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 
 /**
  * Minimize, maximize and close, drawn by LubaTV because the window has no system title bar
- * (decorations are off in tauri.conf.json). Placed at the end of each page's header row.
+ * (decorations are off in tauri.conf.json). Shown once, in the window's top-right corner,
+ * by AppComponent.
  */
 @Component({
   selector: "app-window-controls",

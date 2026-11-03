@@ -42,6 +42,10 @@
   --lt-favorite: #fbbf24;
 
   --lt-sidebar-width: 216px;
+  /* Minimize, maximize and close in the top-right corner (window-controls). */
+  --lt-window-control-width: 46px;
+  --lt-window-controls-height: 32px;
+  --lt-window-controls-width: calc(3 * var(--lt-window-control-width));
   --lt-radius-sm: 8px;
   --lt-radius: 12px;
   --lt-radius-lg: 16px;
@@ -69,15 +73,15 @@
   }
 }
 
+/* The pages scroll inside #page-scroll (app.component), not the window. */
 html {
-  overflow-y: scroll;
+  overflow: hidden;
   scrollbar-color: var(--lt-surface-3) transparent;
 }
 
 html,
 body {
-  height: fit-content;
-  min-height: 100%;
+  height: 100%;
   user-select: none;
 }
 
@@ -520,10 +524,10 @@ select.form-control {
   opacity: 0.7;
 }
 
-/* Dialogs start below the header row, so they never sit under the window buttons. */
+/* Dialogs start below the window buttons. */
 @media (min-width: 576px) {
   .modal-dialog {
-    margin-top: 4.75rem;
+    margin-top: calc(var(--lt-window-controls-height) + 1rem);
   }
 }
 
@@ -595,6 +599,10 @@ select.form-control {
 }
 
 /* Toasts */
+.toast-top-right {
+  top: calc(var(--lt-window-controls-height) + 8px);
+}
+
 .toast-container .ngx-toastr {
   background-color: var(--lt-surface-2);
   background-position: 16px center;

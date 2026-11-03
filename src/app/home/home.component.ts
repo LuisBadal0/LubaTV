@@ -45,6 +45,7 @@ import { NodeType } from "../models/nodeType";
 import { Stack } from "../models/stack";
 import { GroupPreview } from "../models/groupPreview";
 import { SIDEBAR_VIEWS } from "../sidebar/sidebar.component";
+import { pageScroller } from "../page-scroll";
 
 import { BulkActionType } from '../models/bulkActionType';
 
@@ -112,7 +113,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   private scrollFrame = 0;
 
   scrollToTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    pageScroller().scrollTo({ top: 0, behavior: "smooth" });
   }
 
   constructor(
@@ -285,7 +286,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       this.memory.Refresh.subscribe((scroll) => {
         this.load();
         if(scroll)
-          window.scrollTo({ top: 0, behavior: "instant" });
+          pageScroller().scrollTo({ top: 0, behavior: "instant" });
       }),
     );
     this.subscriptions.push(
@@ -430,13 +431,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     if (this.scrollFrame) return;
     this.scrollFrame = requestAnimationFrame(() => {
       this.scrollFrame = 0;
-      const root = document.documentElement;
-      const scrollTop = window.scrollY || root.scrollTop || 0;
+      const scroller = pageScroller();
+      const scrollTop = scroller.scrollTop;
       const showScrollTop = scrollTop > 300;
       const nearEnd =
         !this.reachedMax &&
         !this.loading &&
-        scrollTop + (window.innerHeight || root.clientHeight) >= root.scrollHeight * 0.75;
+        scrollTop + scroller.clientHeight >= scroller.scrollHeight * 0.75;
       if (showScrollTop === this.showScrollTop && !nearEnd) return;
       this.zone.run(() => {
         this.showScrollTop = showScrollTop;
@@ -447,7 +448,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.zone.runOutsideAngular(() =>
-      window.addEventListener("scroll", this.onScroll, { passive: true }),
+      pageScroller().addEventListener("scroll", this.onScroll, { passive: true }),
     );
     this.addEvents().then((_) => _);
     this.subscriptions.push(
@@ -611,7 +612,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       this.focus = 0;
       this.focusArea = FocusArea.Tiles;
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    pageScroller().scrollTo({ top: 0, behavior: "smooth" });
     this.search.nativeElement.focus({
       preventScroll: true,
     });
@@ -827,7 +828,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    window.removeEventListener("scroll", this.onScroll);
+    pageScroller().removeEventListener("scroll", this.onScroll);
     cancelAnimationFrame(this.scrollFrame);
     this.subscriptions.forEach((x) => x.unsubscribe());
   }
