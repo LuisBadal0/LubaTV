@@ -236,10 +236,24 @@ fn get_filename(channel_name: String, url: String) -> Result<String> {
     Ok(filename)
 }
 
+/// The extension for a downloaded file, from the last part of the address's path:
+/// ".../42.mkv?token=1" gives "mkv". Addresses without one, such as "http://host.com/live"
+/// or PHP links, get "mp4".
 fn get_extension(url: String) -> String {
-    url.rsplit(".")
+    let path = url.split(['?', '#']).next().unwrap_or_default();
+    let path = match path.split_once("://") {
+        Some((_, rest)) => rest.split_once('/').map_or("", |(_, path)| path),
+        None => path,
+    };
+    path.rsplit('/')
         .next()
-        .filter(|ext| !ext.starts_with("php?"))
+        .and_then(|name| name.rsplit_once('.'))
+        .map(|(_, extension)| extension)
+        .filter(|extension| {
+            (1..=5).contains(&extension.len())
+                && extension.chars().all(|c| c.is_ascii_alphanumeric())
+                && !extension.eq_ignore_ascii_case("php")
+        })
         .unwrap_or("mp4")
         .to_string()
 }
@@ -392,7 +406,7 @@ pub fn get_user_agent_from_source(source: &Source) -> Result<String> {
 
 #[cfg(test)]
 mod test_utils {
-    use super::sanitize;
+    use super::{get_extension, sanitize};
 
     #[test]
     fn test_dev_deps_dir() {
@@ -409,5 +423,36 @@ mod test_utils {
             "SuperShow Who will win the million".to_string(),
             sanitize("SuperShow: Who will win the million?".to_string())
         );
+    }
+
+    fn extension(url: &str) -> String {
+        get_extension(url.to_string())
+    }
+
+    #[test]
+    fn takes_the_extension_from_the_file_name() {
+        assert_eq!(extension("http://host:8080/movie/user/pass/42.mkv"), "mkv");
+        assert_eq!(extension("http://host/live/user/pass/7.ts"), "ts");
+        assert_eq!(extension("https://cdn.example.com/hls/index.m3u8"), "m3u8");
+    }
+
+    #[test]
+    fn ignores_the_query_and_fragment() {
+        assert_eq!(extension("http://host/42.mp4?token=a.b.c"), "mp4");
+        assert_eq!(extension("http://host/42.avi#t=10"), "avi");
+    }
+
+    #[test]
+    fn ignores_dots_in_the_host_and_folders() {
+        assert_eq!(extension("http://provider.example.com/live/123"), "mp4");
+        assert_eq!(extension("http://10.0.0.1:8080"), "mp4");
+        assert_eq!(extension("http://host/v1.2/stream"), "mp4");
+    }
+
+    #[test]
+    fn uses_mp4_for_php_links_and_odd_endings() {
+        assert_eq!(extension("http://host/get.php?id=1&type=m3u"), "mp4");
+        assert_eq!(extension("http://host/file."), "mp4");
+        assert_eq!(extension("http://host/name.with spaces"), "mp4");
     }
 }
