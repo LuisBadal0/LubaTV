@@ -12,7 +12,7 @@ pub fn log(message: String) {
 }
 
 fn init_logger() -> bool {
-    let file = match fs::File::create(get_and_create_log_path()) {
+    let file = match get_and_create_log_path().and_then(|path| Ok(fs::File::create(path)?)) {
         Ok(val) => val,
         Err(e) => {
             eprint!("Failed to create file for logger, {:?}", e);
@@ -32,14 +32,14 @@ fn init_logger() -> bool {
     }
 }
 
-fn get_and_create_log_path() -> String {
-    let mut path = crate::utils::project_dirs().unwrap().cache_dir().to_owned();
+fn get_and_create_log_path() -> anyhow::Result<String> {
+    let mut path = crate::utils::project_dirs()?.cache_dir().to_owned();
     path.push("logs");
     if !path.exists() {
-        std::fs::create_dir_all(&path).unwrap();
+        std::fs::create_dir_all(&path)?;
     }
     path.push(get_log_name());
-    path.to_string_lossy().to_string()
+    Ok(path.to_string_lossy().to_string())
 }
 
 fn get_log_name() -> String {

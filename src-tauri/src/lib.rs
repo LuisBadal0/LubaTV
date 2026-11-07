@@ -148,7 +148,7 @@ pub fn run() {
                     return;
                 }
 
-                _window.hide().unwrap();
+                let _ = _window.hide();
                 api.prevent_close();
             }
             _ => {}

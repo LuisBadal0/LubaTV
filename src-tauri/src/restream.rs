@@ -146,7 +146,7 @@ fn get_restream_folder() -> Result<PathBuf> {
     let mut path = crate::utils::project_dirs()?.cache_dir().to_owned();
     path.push("restream");
     if !path.exists() {
-        std::fs::create_dir_all(&path).unwrap();
+        std::fs::create_dir_all(&path).context("Couldn't create the re-stream folder")?;
     }
     Ok(path)
 }
