@@ -62,6 +62,12 @@ sudo apt install mpv ffmpeg yt-dlp        # Debian / Ubuntu
 
 On Debian-based LTS releases, a backported yt-dlp is recommended; the packaged version is often too old.
 
+If the window stays blank or flickers on Linux (some GPU drivers), start LubaTV with `WEBKIT_DISABLE_DMABUF_RENDERER=1`, or with `WEBKIT_DISABLE_COMPOSITING_MODE=1` if that doesn't help:
+
+```
+WEBKIT_DISABLE_DMABUF_RENDERER=1 lubatv
+```
+
 ## Hotkeys
 
 | Keys | Action |
