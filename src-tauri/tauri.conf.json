@@ -1,6 +1,6 @@
 {
   "productName": "LubaTV",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "identifier": "dev.luisbadalo.lubatv",
   "build": {
     "frontendDist": "../dist/lubatv/browser",
@@ -24,7 +24,20 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data: blob: http: https:",
+        "font-src": "'self' data:",
+        "connect-src": "'self' ipc: http://ipc.localhost",
+        "object-src": "'none'",
+        "frame-src": "'none'",
+        "base-uri": "'self'",
+        "form-action": "'none'"
+      },
+      "devCsp": null,
+      "dangerousDisableAssetCspModification": ["style-src"]
     }
   },
   "bundle": {
