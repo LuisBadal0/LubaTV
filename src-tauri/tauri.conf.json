@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "LubaTV (v1.4.0)",
+        "title": "LubaTV",
         "width": 1100,
         "height": 720,
         "minWidth": 480,
