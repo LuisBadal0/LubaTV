@@ -1,0 +1,8 @@
+# Keep the build context to the sources: the image installs and builds everything itself.
+.git
+node_modules
+dist
+.angular
+src-tauri/target
+src-tauri/deps
+src-tauri/gen
