@@ -1,0 +1,45 @@
+name: Frontend tests
+
+# Unit tests for the Angular frontend in src. Run them locally with `npm test`
+# (watches for changes) or `npm run test:ci` (runs once, headless).
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "src/**"
+      - "angular.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - ".github/workflows/frontend-tests.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "angular.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - ".github/workflows/frontend-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 20.x
+          cache: npm
+
+      - run: npm ci
+
+      # The runner image includes Chrome; Karma runs it headless.
+      - run: npm run test:ci

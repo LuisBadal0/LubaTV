@@ -9,7 +9,8 @@
     "build:windows": "tauri build --config src-tauri/tauri.windows-installer.conf.json",
     "buildMac": "tauri build --target universal-apple-darwin",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadless --no-progress"
   },
   "private": true,
   "dependencies": {

@@ -100,6 +100,20 @@ npm run build:windows # Windows: .exe and .msi installers with the player files 
 
 `build:windows` needs the player files in `src-tauri/deps` first (see below).
 
+### Tests
+
+```
+npm test              # frontend tests, rerun on every change
+npm run test:ci       # frontend tests once, in headless Chrome
+
+cd src-tauri
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test            # add -- --ignored for the tests that need mpv or downloads
+```
+
+CI runs all of them on every pull request. Without Chrome, point `CHROME_BIN` at another Chromium browser, such as Edge.
+
 ### Releasing
 
 Every merge to `main` builds the Windows installers and Linux packages. If the version is new, CI publishes them as GitHub release `v<version>` with notes listing the merged pull requests. To publish a release, bump the version in the same pull request, in all three of `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. CI fails if they differ. A merge that keeps an already-released version builds but publishes nothing.
