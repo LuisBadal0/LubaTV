@@ -21,7 +21,7 @@ use rusqlite_migration::{M, Migrations};
 
 const PAGE_SIZE: u8 = 36;
 pub const DB_NAME: &str = "db.sqlite";
-static CONN: LazyLock<Pool<SqliteConnectionManager>> = LazyLock::new(|| create_connection_pool());
+static CONN: LazyLock<Pool<SqliteConnectionManager>> = LazyLock::new(create_connection_pool);
 
 pub fn get_conn() -> Result<PooledConnection<SqliteConnectionManager>> {
     CONN.try_get().context("No sqlite conns available")
@@ -54,7 +54,7 @@ fn get_and_create_sqlite_db_path() -> String {
         std::fs::create_dir_all(&path).unwrap();
     }
     path.push(DB_NAME);
-    return path.to_string_lossy().to_string();
+    path.to_string_lossy().to_string()
 }
 
 fn create_structure() -> Result<()> {
@@ -273,7 +273,7 @@ pub fn create_or_find_source_by_name(tx: &Transaction, source: &Source) -> Resul
     }
     tx.execute(
     "INSERT INTO sources (name, source_type, url, username, password, use_tvg_id, user_agent, max_streams, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    params![source.name, source.source_type.clone() as u8, source.url, source.username, source.password, source.use_tvg_id, source.user_agent, source.max_streams, chrono::Utc::now().timestamp()],
+    params![source.name, source.source_type, source.url, source.username, source.password, source.use_tvg_id, source.user_agent, source.max_streams, chrono::Utc::now().timestamp()],
     )?;
     Ok(tx.last_insert_rowid())
 }
@@ -330,7 +330,7 @@ DO UPDATE SET
             channel.image,
             channel.url,
             channel.source_id,
-            channel.media_type as u8,
+            channel.media_type,
             channel.series_id,
             channel.favorite,
             channel.stream_id,
@@ -509,14 +509,14 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     }
 
     if filters.series_id.is_some() {
-        sql_query += &format!("\nAND series_id = ?");
+        sql_query += "\nAND series_id = ?";
         baked_params += 1;
     } else if filters.group_id.is_some() {
-        sql_query += &format!("\nAND group_id = ?");
+        sql_query += "\nAND group_id = ?";
         baked_params += 1;
     }
     if filters.season.is_some() {
-        sql_query += &format!("\nAND season_id = ?");
+        sql_query += "\nAND season_id = ?";
         baked_params += 1;
     }
     let order = match filters.sort {
@@ -905,17 +905,13 @@ fn to_to_sql<T: rusqlite::ToSql>(values: &[T]) -> Vec<&dyn rusqlite::ToSql> {
 }
 
 fn get_keywords_sql(size: usize) -> String {
-    std::iter::repeat("name LIKE ?")
-        .take(size)
+    std::iter::repeat_n("name LIKE ?", size)
         .collect::<Vec<_>>()
         .join(" AND ")
 }
 
 fn generate_placeholders(size: usize) -> String {
-    std::iter::repeat("?")
-        .take(size)
-        .collect::<Vec<_>>()
-        .join(",")
+    std::iter::repeat_n("?", size).collect::<Vec<_>>().join(",")
 }
 
 pub fn series_has_episodes(series_id: u64, source_id: i64) -> Result<bool> {
@@ -1262,10 +1258,10 @@ pub fn add_custom_channel(tx: &Transaction, channel: CustomChannel) -> Result<()
 }
 
 fn channel_headers_empty(headers: &ChannelHttpHeaders) -> bool {
-    return headers.ignore_ssl.is_none()
+    headers.ignore_ssl.is_none()
         && headers.http_origin.is_none()
         && headers.referrer.is_none()
-        && headers.user_agent.is_none();
+        && headers.user_agent.is_none()
 }
 
 pub fn get_custom_source(name: String) -> Source {
@@ -1296,7 +1292,7 @@ pub fn edit_custom_channel(channel: CustomChannel) -> Result<()> {
         }
         Err(e) => {
             tx.rollback().unwrap_or_else(|e| log(format!("{:?}", e)));
-            return Err(e);
+            Err(e)
         }
     }
 }

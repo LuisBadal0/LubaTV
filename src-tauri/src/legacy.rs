@@ -152,11 +152,11 @@ fn deletable_folders(candidates: Vec<PathBuf>) -> Vec<PathBuf> {
 
 /// Removes the empty `fredol` folder left on Windows after deleting `fredol\open-tv`.
 fn remove_empty_legacy_parent(folder: &Path) {
-    if let Some(parent) = folder.parent() {
-        if parent.file_name().is_some_and(|n| n == "fredol") {
-            // remove_dir only succeeds on an empty folder.
-            _ = std::fs::remove_dir(parent);
-        }
+    if let Some(parent) = folder.parent()
+        && parent.file_name().is_some_and(|n| n == "fredol")
+    {
+        // remove_dir only succeeds on an empty folder.
+        _ = std::fs::remove_dir(parent);
     }
 }
 

@@ -98,10 +98,10 @@ pub async fn download(
         if let Some(referrer) = headers.referrer.as_ref() {
             headers_map.insert("Referer", HeaderValue::from_str(referrer)?);
         }
-        if let Some(ignore_ssl) = headers.ignore_ssl {
-            if ignore_ssl {
-                client = client.danger_accept_invalid_certs(true);
-            }
+        if let Some(ignore_ssl) = headers.ignore_ssl
+            && ignore_ssl
+        {
+            client = client.danger_accept_invalid_certs(true);
         }
     }
     let user_agent = headers
@@ -142,7 +142,7 @@ pub async fn download(
                            let progress = (progress * 10.0).trunc() / 10.0;
                            if progress > send_threshold {
                                let _ = app.emit(&format!("progress-{}", download_id), progress);
-                               send_threshold = progress + 0.1 as f64;
+                               send_threshold = progress + 0.1_f64;
                            }
                        }
                    }
@@ -156,16 +156,16 @@ pub async fn download(
         }
     };
 
-    _ = remove_from_play_stop(state, &source_id, &download_id.to_string())
+    _ = remove_from_play_stop(state, &source_id, download_id)
         .await
         .map_err(|e| log(format!("{:?}", e)));
 
-    if let Err(e) = &result {
-        if e.to_string() == "download aborted" {
-            drop(file);
-            let _ = tokio::fs::remove_file(path).await;
-            bail!("download aborted");
-        }
+    if let Err(e) = &result
+        && e.to_string() == "download aborted"
+    {
+        drop(file);
+        let _ = tokio::fs::remove_file(path).await;
+        bail!("download aborted");
     }
     result
 }
@@ -178,7 +178,7 @@ pub async fn remove_from_play_stop(
     let mut state = state.lock().await;
     let map = state
         .play_stop
-        .get_mut(&source_id)
+        .get_mut(source_id)
         .context("no indexMap for sourceId")?;
     Ok(map.shift_remove(key))
 }
@@ -221,16 +221,11 @@ pub async fn insert_play_token(
     state: &State<'_, Mutex<AppState>>,
 ) -> Result<()> {
     let mut guard = state.lock().await;
-    if guard.play_stop.get(&source_id).is_none() {
-        guard
-            .play_stop
-            .insert(source_id, IndexMap::<String, CancellationToken>::new());
-    }
-    let map = guard
+    guard
         .play_stop
-        .get_mut(&source_id)
-        .context("no indexMap found")?;
-    map.insert(key, token);
+        .entry(source_id)
+        .or_insert_with(IndexMap::<String, CancellationToken>::new)
+        .insert(key, token);
     Ok(())
 }
 
@@ -302,19 +297,19 @@ pub fn bin_start_error(bin: &str, path: &str) -> String {
 }
 
 pub fn find_macos_bin(bin: &str) -> String {
-    return MACOS_POTENTIAL_PATHS
+    MACOS_POTENTIAL_PATHS
         .iter()
         .map(|path| {
             let mut path = Path::new(path).to_path_buf();
             path.push(bin);
-            return path;
+            path
         })
         .find(|path| path.exists())
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| {
             log(format!("Could not find {} on MacOS host", bin));
-            return bin.to_string();
-        });
+            bin.to_string()
+        })
 }
 
 pub fn serialize_to_file<T: Serialize>(obj: T, path: String) -> Result<()> {

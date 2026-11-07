@@ -223,16 +223,16 @@ fn process_xtream(
     let mut groups: HashMap<String, i64> = HashMap::new();
     for live in streams {
         let category_name = get_cat_name(&cats, get_serde_json_string(&live.category_id));
-        convert_xtream_live_to_channel(live, &source, stream_type.clone(), category_name)
+        convert_xtream_live_to_channel(live, source, stream_type, category_name)
             .and_then(|mut channel| {
                 sql::set_channel_group_id(
                     &mut groups,
                     &mut channel,
-                    &tx,
+                    tx,
                     source.id.as_ref().unwrap(),
                 )
                 .unwrap_or_else(|e| log::log(format!("{:?}", e)));
-                sql::insert_channel(&tx, channel)?;
+                sql::insert_channel(tx, channel)?;
                 Ok(())
             })
             .unwrap_or_else(|e| log::log(format!("{:?}", e)));
@@ -241,10 +241,8 @@ fn process_xtream(
 }
 
 fn get_cat_name(cats: &HashMap<String, String>, category_id: Option<String>) -> Option<String> {
-    if category_id.is_none() {
-        return None;
-    }
-    return cats.get(&category_id.unwrap()).map(|t| t.to_string());
+    category_id.as_ref()?;
+    cats.get(&category_id.unwrap()).map(|t| t.to_string())
 }
 
 fn convert_xtream_live_to_channel(
@@ -261,7 +259,7 @@ fn convert_xtream_live_to_channel(
             .stream_icon
             .or(stream.cover)
             .map(|x| x.trim().to_string()),
-        media_type: stream_type.clone(),
+        media_type: stream_type,
         name: stream.name.context("No name")?.trim().to_string(),
         source_id: source.id,
         url: if stream_type == media_type::SERIE {
@@ -316,7 +314,7 @@ pub async fn get_episodes(channel: Channel) -> Result<()> {
     if sql::series_has_episodes(series_id, channel.source_id.context("no source id")?)
         .unwrap_or_else(|e| {
             log::log(format!("{:?}", e));
-            return false;
+            false
         })
     {
         return Ok(());
@@ -328,11 +326,7 @@ pub async fn get_episodes(channel: Channel) -> Result<()> {
         .append_pair("series_id", &series_id.to_string());
     let mut series =
         get_xtream_http_data::<XtreamSeries>(url, GET_SERIES_INFO, &user_agent).await?;
-    let mut episodes: Vec<XtreamEpisode> = series
-        .episodes
-        .into_values()
-        .flat_map(|episode| episode)
-        .collect();
+    let mut episodes: Vec<XtreamEpisode> = series.episodes.into_values().flatten().collect();
     series
         .seasons
         .sort_by_key(|f| get_serde_json_i64(&f.season_number));
@@ -396,7 +390,7 @@ fn insert_episode(
     let season_number = get_serde_json_i64(&episode.season).unwrap_or(NO_SEASON_NUMBER);
     let season_id = seasons_db.get(&season_number);
     let season_id: i64 = match season_id {
-        Some(s) => s.clone(),
+        Some(s) => *s,
         None => {
             let season = seasons
                 .get(&season_number)
@@ -419,8 +413,8 @@ fn insert_episode(
             id
         }
     };
-    let episode = episode_to_channel(episode, &source, series_id, season_id)?;
-    sql::insert_channel(&tx, episode)?;
+    let episode = episode_to_channel(episode, source, series_id, season_id)?;
+    sql::insert_channel(tx, episode)?;
     Ok(())
 }
 
@@ -494,7 +488,7 @@ fn episode_to_channel(
         source_id: source.id,
         url: Some(get_url(
             get_serde_json_string(&episode.id).context("no id")?,
-            &source,
+            source,
             media_type::SERIE,
             Some(episode.container_extension),
         )?),
@@ -594,7 +588,7 @@ fn get_timeshift_url(mut url: Url, start: String, end: String, stream_id: &str) 
 
 async fn get_status(source: &mut Source) -> Result<(i64, XtreamStatus)> {
     let url = build_xtream_url(source)?;
-    let user_agent = get_user_agent_from_source(&source)?;
+    let user_agent = get_user_agent_from_source(source)?;
     let client = Client::builder().user_agent(user_agent).build()?;
     let data = client.get(url).send().await?.json::<XtreamStatus>().await?;
     Ok((source.id.context("no id")?, data))
@@ -602,7 +596,7 @@ async fn get_status(source: &mut Source) -> Result<(i64, XtreamStatus)> {
 
 pub async fn get_all_expiries() -> Result<HashMap<i64, i64>> {
     let mut sources = sql::get_sources_by_type(source_type::XTREAM)?;
-    let to_await = sources.iter_mut().map(|source| get_status(source));
+    let to_await = sources.iter_mut().map(get_status);
     let results: Vec<std::result::Result<(i64, XtreamStatus), anyhow::Error>> =
         join_all(to_await).await;
     let statuses: HashMap<i64, i64> = results

@@ -148,12 +148,12 @@ pub async fn play(
 
     // A cancelled token was already removed (by cancel_play, or by the stream that
     // replaced this one), and its key may now belong to a newer stream of the same channel.
-    if let Some(source_id) = source_id {
-        if !token.is_cancelled() {
-            _ = crate::utils::remove_from_play_stop(state, &source_id, &key)
-                .await
-                .map_err(|e| log::log(format!("{:?}", e)));
-        }
+    if let Some(source_id) = source_id
+        && !token.is_cancelled()
+    {
+        _ = crate::utils::remove_from_play_stop(state, &source_id, &key)
+            .await
+            .map_err(|e| log::log(format!("{:?}", e)));
     }
     result
 }
@@ -571,7 +571,7 @@ fn set_headers(
 fn get_path(path_str: String) -> String {
     let path = Path::new(&path_str);
     let path = path.join(get_file_name());
-    return path.to_string_lossy().to_string();
+    path.to_string_lossy().to_string()
 }
 
 fn get_file_name() -> String {
@@ -878,6 +878,9 @@ mod ipc {
 /// These start real mpv windows (without video or audio output), so they need mpv:
 /// `cargo test mpv -- --ignored`. On Windows, run scripts/fetch-windows-deps.ps1 first.
 #[cfg(test)]
+// The tests hold serial()'s guard across awaits on purpose: it keeps the mpv tests from
+// running at the same time, and each test runs on its own runtime.
+#[allow(clippy::await_holding_lock)]
 mod tests {
     use super::*;
 

@@ -93,10 +93,10 @@ pub fn user_dir() -> Result<PathBuf> {
 /// that hasn't happened yet. Falls back to any copy that exists, even an outdated one,
 /// so playback works while a newer one downloads.
 pub fn path(name: &str) -> PathBuf {
-    if RESOLVED.read().unwrap().is_none() {
-        if let Err(e) = check() {
-            log::log(format!("Could not check the player files: {:?}", e));
-        }
+    if RESOLVED.read().unwrap().is_none()
+        && let Err(e) = check()
+    {
+        log::log(format!("Could not check the player files: {:?}", e));
     }
     if let Some(path) = RESOLVED.read().unwrap().as_ref().and_then(|r| r.get(name)) {
         return path.clone();
@@ -369,10 +369,10 @@ impl VerifiedCache {
     }
 
     fn save(&self, dir: &Path) {
-        if fs::create_dir_all(dir).is_ok() {
-            if let Ok(json) = serde_json::to_string(self) {
-                _ = fs::write(dir.join(VERIFIED_CACHE), json);
-            }
+        if fs::create_dir_all(dir).is_ok()
+            && let Ok(json) = serde_json::to_string(self)
+        {
+            _ = fs::write(dir.join(VERIFIED_CACHE), json);
         }
     }
 
@@ -389,10 +389,11 @@ impl VerifiedCache {
             .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
             .map_or(0, |d| d.as_secs());
         let key = path.to_string_lossy().to_string();
-        if let Some(seen) = self.files.get(&key) {
-            if seen.size == meta.len() && seen.modified == modified {
-                return seen.sha256 == locked.sha256;
-            }
+        if let Some(seen) = self.files.get(&key)
+            && seen.size == meta.len()
+            && seen.modified == modified
+        {
+            return seen.sha256 == locked.sha256;
         }
         match hash_file(path) {
             Ok(sha256) => {

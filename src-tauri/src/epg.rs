@@ -36,7 +36,7 @@ pub fn poll(mut to_watch: Vec<EPGNotify>, stop: Arc<AtomicBool>, app: AppHandle)
                 }
                 return false;
             }
-            return true;
+            true
         });
         sleep(Duration::from_secs(1));
     }
@@ -102,7 +102,7 @@ pub async fn remove_epg(
     sql::clean_epgs()?;
     sql::remove_epg(epg_id)?;
     let list = sql::get_epgs()?;
-    if list.len() == 0 {
+    if list.is_empty() {
         return Ok(());
     }
     state
@@ -114,7 +114,7 @@ pub async fn remove_epg(
 pub async fn on_start_check_epg(state: State<'_, Mutex<AppState>>, app: AppHandle) -> Result<()> {
     sql::clean_epgs()?;
     let list = sql::get_epgs()?;
-    if list.len() == 0 {
+    if list.is_empty() {
         return Ok(());
     }
     let mut state = state.lock().await;

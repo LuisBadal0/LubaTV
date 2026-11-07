@@ -55,7 +55,7 @@ pub fn read_m3u8(mut source: Source, wipe: bool) -> Result<()> {
     };
     let file = File::open(path).context("Failed to open m3u8 file")?;
     let reader = BufReader::new(file);
-    let mut lines = reader.lines().enumerate();
+    let lines = reader.lines().enumerate();
     let mut sql = sql::get_conn()?;
     let mut channel_preserve: Vec<ChannelPreserve> = Vec::new();
     let tx = sql.transaction()?;
@@ -76,7 +76,7 @@ pub fn read_m3u8(mut source: Source, wipe: bool) -> Result<()> {
         use_tvg_id: source.use_tvg_id,
         line_count: 0,
     };
-    while let Some((c1, l1)) = lines.next() {
+    for (c1, l1) in lines {
         processing.line_count = c1;
         let l1 = match l1.with_context(|| format!("Failed to process line {c1}")) {
             Ok(r) => r,
@@ -127,7 +127,7 @@ fn try_commit_channel(processing: &mut M3UProcessing, tx: &Transaction) {
             processing.channel_headers.take(),
             processing.source_id,
             processing.use_tvg_id,
-            &tx,
+            tx,
         )
         .with_context(|| {
             format!(
@@ -198,7 +198,7 @@ fn get_tmp_path() -> String {
         std::fs::create_dir_all(&path).unwrap();
     }
     path.push("get.m3u");
-    return path.to_string_lossy().to_string();
+    path.to_string_lossy().to_string()
 }
 
 fn extract_non_empty_capture(caps: Captures) -> Option<String> {
@@ -209,25 +209,25 @@ fn extract_non_empty_capture(caps: Captures) -> Option<String> {
 
 fn set_http_headers(line: &str, headers: &mut ChannelHttpHeaders) -> bool {
     if let Some(origin) = HTTP_ORIGIN_REGEX
-        .captures(&line)
+        .captures(line)
         .and_then(extract_non_empty_capture)
     {
         headers.http_origin = Some(origin);
         return true;
     } else if let Some(referrer) = HTTP_REFERRER_REGEX
-        .captures(&line)
+        .captures(line)
         .and_then(extract_non_empty_capture)
     {
         headers.referrer = Some(referrer);
         return true;
     } else if let Some(user_agent) = HTTP_USER_AGENT_REGEX
-        .captures(&line)
+        .captures(line)
         .and_then(extract_non_empty_capture)
     {
         headers.user_agent = Some(user_agent);
         return true;
     }
-    return false;
+    false
 }
 
 fn get_channel_from_lines(
@@ -255,9 +255,9 @@ fn get_channel_from_lines(
                     .and_then(extract_non_empty_capture)
             };
             if let Some(true) = use_tvg_id {
-                return id().or(name_alt());
+                id().or(name_alt())
             } else {
-                return name_alt().or(id());
+                name_alt().or(id())
             }
         })
         .context("Couldn't find name from Name or ID")?;
@@ -288,24 +288,17 @@ fn get_channel_from_lines(
 }
 
 fn get_media_type(url: String) -> u8 {
-    let media_type = if url.ends_with(".mp4") || url.ends_with(".mkv") {
+    if url.ends_with(".mp4") || url.ends_with(".mkv") {
         media_type::MOVIE
     } else {
         media_type::LIVESTREAM
-    };
-    return media_type;
+    }
 }
 
 #[cfg(test)]
 mod test_m3u {
-    use std::{env, time::Instant};
 
-    use crate::{
-        m3u::{get_channel_from_lines, get_m3u8_from_link},
-        types::Source,
-    };
-
-    use super::read_m3u8;
+    use crate::m3u::get_channel_from_lines;
 
     #[test]
     fn test_get_channel_from_lines() {
