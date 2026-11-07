@@ -66,5 +66,5 @@ files and the Docker image. Don't create tags or releases by hand.
   `TAURI_SIGNING_PRIVATE_KEY` secret. Changing it stops installed copies from updating.
 - **Data and logs** live outside the repository (see "Where LubaTV keeps its data" in
   `README.md`). Never commit databases, logs or playlists: they hold provider credentials.
-- **SQL:** build queries with `?` placeholders (`generate_placeholders` in `sql.rs`), never by
+- **SQL:** build queries with `?` placeholders (`generate_placeholders` in the `sql` module), never by
   formatting values into the query text.
