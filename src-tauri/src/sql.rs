@@ -28,8 +28,8 @@ pub fn get_conn() -> Result<PooledConnection<SqliteConnectionManager>> {
 }
 
 fn create_connection_pool() -> Pool<SqliteConnectionManager> {
-    let manager =
-        SqliteConnectionManager::file(get_and_create_sqlite_db_path()).with_init(configure_connection);
+    let manager = SqliteConnectionManager::file(get_and_create_sqlite_db_path())
+        .with_init(configure_connection);
     r2d2::Pool::builder().max_size(20).build(manager).unwrap()
 }
 
@@ -49,10 +49,7 @@ fn page_offset(page: u32) -> u32 {
 }
 
 fn get_and_create_sqlite_db_path() -> String {
-    let mut path = crate::utils::project_dirs()
-        .unwrap()
-        .data_dir()
-        .to_owned();
+    let mut path = crate::utils::project_dirs().unwrap().data_dir().to_owned();
     if !path.exists() {
         std::fs::create_dir_all(&path).unwrap();
     }

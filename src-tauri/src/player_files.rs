@@ -113,7 +113,11 @@ pub fn path(name: &str) -> PathBuf {
 pub fn check() -> Result<Status> {
     // Development builds use src-tauri/deps as they are (see utils::deps_dir).
     if cfg!(debug_assertions) {
-        let resolved = LOCK.files.keys().map(|name| (name.clone(), deps_dir().join(name))).collect();
+        let resolved = LOCK
+            .files
+            .keys()
+            .map(|name| (name.clone(), deps_dir().join(name)))
+            .collect();
         *RESOLVED.write().unwrap() = Some(resolved);
         return Ok(Status::default());
     }
@@ -125,7 +129,9 @@ pub fn check() -> Result<Status> {
 /// check() for a given installed folder and LubaTV folder.
 fn check_in(bundled: &Path, user: &Path) -> (Status, HashMap<String, PathBuf>) {
     let mut cache = VerifiedCache::load(user);
-    let plan = plan(bundled, user, &mut |path, locked| cache.matches(path, locked));
+    let plan = plan(bundled, user, &mut |path, locked| {
+        cache.matches(path, locked)
+    });
     cache.save(user);
 
     let mut status = Status::default();
@@ -158,12 +164,18 @@ fn plan(
         .filter(|name| MPV_GROUP.contains(&name.as_str()))
         .collect();
     let all_match = |dir: &Path, matches: &mut dyn FnMut(&Path, &LockedFile) -> bool| {
-        group.iter().all(|name| matches(&dir.join(name), &LOCK.files[*name]))
+        group
+            .iter()
+            .all(|name| matches(&dir.join(name), &LOCK.files[*name]))
     };
     // mpv and its companions come from one folder: the installed one if it's all
     // current, otherwise LubaTV's own folder, filled from the installed one where possible.
     if all_match(bundled, matches) {
-        plan.extend(group.iter().map(|name| ((*name).clone(), Action::Use(bundled.join(name)))));
+        plan.extend(
+            group
+                .iter()
+                .map(|name| ((*name).clone(), Action::Use(bundled.join(name)))),
+        );
     } else {
         for name in &group {
             plan.push(((*name).clone(), place(name, bundled, user, matches)));
@@ -204,7 +216,10 @@ fn place(
 /// frontend, then checks again.
 pub async fn sync(app: AppHandle) -> Result<Status> {
     let _guard = SYNC.lock().await;
-    if tauri::async_runtime::spawn_blocking(check).await??.up_to_date() {
+    if tauri::async_runtime::spawn_blocking(check)
+        .await??
+        .up_to_date()
+    {
         return Ok(Status::default());
     }
     let report = |progress: Progress| _ = app.emit(PROGRESS_EVENT, progress);
@@ -213,7 +228,11 @@ pub async fn sync(app: AppHandle) -> Result<Status> {
 }
 
 /// sync() for a given installed folder and LubaTV folder. Returns what's still missing.
-async fn sync_in(bundled: PathBuf, user: PathBuf, report: &(dyn Fn(Progress) + Sync)) -> Result<Status> {
+async fn sync_in(
+    bundled: PathBuf,
+    user: PathBuf,
+    report: &(dyn Fn(Progress) + Sync),
+) -> Result<Status> {
     let status = {
         let (bundled, user) = (bundled.clone(), user.clone());
         tauri::async_runtime::spawn_blocking(move || check_in(&bundled, &user).0).await?
@@ -261,7 +280,10 @@ async fn sync_in(bundled: PathBuf, user: PathBuf, report: &(dyn Fn(Progress) + S
         let (name, user) = (name.clone(), user.clone());
         tauri::async_runtime::spawn_blocking(move || unpack_verified(&name, &user)).await??;
     }
-    report(Progress { downloaded: total, total });
+    report(Progress {
+        downloaded: total,
+        total,
+    });
     Ok(tauri::async_runtime::spawn_blocking(move || check_in(&bundled, &user).0).await?)
 }
 
@@ -269,7 +291,8 @@ async fn sync_in(bundled: PathBuf, user: PathBuf, report: &(dyn Fn(Progress) + S
 fn copy_verified(from: &Path, to: &Path) -> Result<()> {
     let name = to.file_name().unwrap().to_string_lossy().to_string();
     let part = to.with_extension("part");
-    let mut input = File::open(from).with_context(|| format!("could not read {}", from.display()))?;
+    let mut input =
+        File::open(from).with_context(|| format!("could not read {}", from.display()))?;
     let mut output = File::create(&part)?;
     let hash = copy_hashing(&mut input, &mut output)?;
     finish(&name, &hash, &part, to)
@@ -281,7 +304,8 @@ fn unpack_verified(name: &str, dir: &Path) -> Result<()> {
     let part = dir.join(format!("{name}.part"));
     let mut input = GzDecoder::new(io::BufReader::new(File::open(&gz)?));
     let mut output = File::create(&part)?;
-    let hash = copy_hashing(&mut input, &mut output).with_context(|| format!("{name} is damaged"))?;
+    let hash =
+        copy_hashing(&mut input, &mut output).with_context(|| format!("{name} is damaged"))?;
     _ = fs::remove_file(&gz);
     finish(name, &hash, &part, &dir.join(name))
 }
@@ -294,7 +318,10 @@ fn finish(name: &str, hash: &str, part: &Path, to: &Path) -> Result<()> {
     if let Err(e) = fs::rename(part, to) {
         _ = fs::remove_file(part);
         return Err(e).with_context(|| {
-            format!("could not replace {}. If the player is open, close it and try again", to.display())
+            format!(
+                "could not replace {}. If the player is open, close it and try again",
+                to.display()
+            )
         });
     }
     Ok(())
@@ -370,7 +397,14 @@ impl VerifiedCache {
         match hash_file(path) {
             Ok(sha256) => {
                 let matches = sha256 == locked.sha256;
-                self.files.insert(key, Verified { size: meta.len(), modified, sha256 });
+                self.files.insert(
+                    key,
+                    Verified {
+                        size: meta.len(),
+                        modified,
+                        sha256,
+                    },
+                );
                 matches
             }
             Err(_) => false,
@@ -403,10 +437,14 @@ mod tests {
     fn lock_lists_the_player_files() {
         let names: Vec<&str> = LOCK.files.keys().map(String::as_str).collect();
         assert_eq!(names, ALL);
-        assert!(LOCK.files.values().all(|f| f.release.starts_with("player-files-")
-            && f.sha256.len() == 64
-            && f.size > 0
-            && f.download_size > 0));
+        assert!(
+            LOCK.files
+                .values()
+                .all(|f| f.release.starts_with("player-files-")
+                    && f.sha256.len() == 64
+                    && f.size > 0
+                    && f.download_size > 0)
+        );
     }
 
     #[test]
@@ -421,11 +459,24 @@ mod tests {
     #[test]
     fn only_changed_files_are_downloaded() {
         // A new mpv: the rest of its group is copied next to it, not downloaded.
-        let plan = plan_with(&[("B", "ffmpeg.exe"), ("B", "vulkan-1.dll"), ("B", "yt-dlp.exe")]);
+        let plan = plan_with(&[
+            ("B", "ffmpeg.exe"),
+            ("B", "vulkan-1.dll"),
+            ("B", "yt-dlp.exe"),
+        ]);
         assert_eq!(action(&plan, "mpv.exe"), &Action::Download);
-        assert_eq!(action(&plan, "vulkan-1.dll"), &Action::Copy(Path::new("B").join("vulkan-1.dll")));
-        assert_eq!(action(&plan, "yt-dlp.exe"), &Action::Copy(Path::new("B").join("yt-dlp.exe")));
-        assert_eq!(action(&plan, "ffmpeg.exe"), &Action::Use(Path::new("B").join("ffmpeg.exe")));
+        assert_eq!(
+            action(&plan, "vulkan-1.dll"),
+            &Action::Copy(Path::new("B").join("vulkan-1.dll"))
+        );
+        assert_eq!(
+            action(&plan, "yt-dlp.exe"),
+            &Action::Copy(Path::new("B").join("yt-dlp.exe"))
+        );
+        assert_eq!(
+            action(&plan, "ffmpeg.exe"),
+            &Action::Use(Path::new("B").join("ffmpeg.exe"))
+        );
     }
 
     #[test]
@@ -446,7 +497,8 @@ mod tests {
     #[tokio::test]
     #[ignore = "downloads about 28 MB"]
     async fn only_a_changed_file_is_downloaded() {
-        let source = PathBuf::from(std::env::var("LUBATV_TEST_BUNDLED").expect("set LUBATV_TEST_BUNDLED"));
+        let source =
+            PathBuf::from(std::env::var("LUBATV_TEST_BUNDLED").expect("set LUBATV_TEST_BUNDLED"));
         let root = std::env::temp_dir().join(format!("lubatv-player-sync-{}", std::process::id()));
         let (bundled, user) = (root.join("deps"), root.join("player"));
         fs::create_dir_all(&bundled).unwrap();
@@ -463,20 +515,40 @@ mod tests {
 
         let reports = std::sync::Mutex::new(Vec::new());
         let report = |p: Progress| reports.lock().unwrap().push(p);
-        let left = sync_in(bundled.clone(), user.clone(), &report).await.unwrap();
+        let left = sync_in(bundled.clone(), user.clone(), &report)
+            .await
+            .unwrap();
         assert!(left.up_to_date(), "{left:?}");
         let last = reports.lock().unwrap().last().cloned().unwrap();
-        assert_eq!((last.downloaded, last.total), (status.download_size, status.download_size));
+        assert_eq!(
+            (last.downloaded, last.total),
+            (status.download_size, status.download_size)
+        );
 
         let (status, resolved) = check_in(&bundled, &user);
         assert!(status.up_to_date());
         for name in ["mpv.exe", "vulkan-1.dll", "yt-dlp.exe"] {
-            assert_eq!(resolved[name], user.join(name), "{name} is used from LubaTV's folder");
+            assert_eq!(
+                resolved[name],
+                user.join(name),
+                "{name} is used from LubaTV's folder"
+            );
         }
-        assert_eq!(resolved["ffmpeg.exe"], bundled.join("ffmpeg.exe"), "ffmpeg wasn't touched");
+        assert_eq!(
+            resolved["ffmpeg.exe"],
+            bundled.join("ffmpeg.exe"),
+            "ffmpeg wasn't touched"
+        );
         assert!(!user.join("ffmpeg.exe").exists());
-        let leftovers: Vec<_> = fs::read_dir(&user).unwrap().map(|e| e.unwrap().file_name()).collect();
-        assert_eq!(leftovers.len(), 4, "3 player files and the checksum cache: {leftovers:?}");
+        let leftovers: Vec<_> = fs::read_dir(&user)
+            .unwrap()
+            .map(|e| e.unwrap().file_name())
+            .collect();
+        assert_eq!(
+            leftovers.len(),
+            4,
+            "3 player files and the checksum cache: {leftovers:?}"
+        );
         _ = fs::remove_dir_all(&root);
     }
 
@@ -488,7 +560,9 @@ mod tests {
         let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::fast());
         gz.write_all(b"not the real file").unwrap();
         fs::write(dir.join("vulkan-1.dll.gz.part"), gz.finish().unwrap()).unwrap();
-        let error = unpack_verified("vulkan-1.dll", &dir).unwrap_err().to_string();
+        let error = unpack_verified("vulkan-1.dll", &dir)
+            .unwrap_err()
+            .to_string();
         assert!(error.contains("doesn't match its checksum"), "{error}");
         assert!(!dir.join("vulkan-1.dll").exists());
         assert!(!dir.join("vulkan-1.dll.part").exists());

@@ -359,7 +359,10 @@ impl Window {
         }
         // The click came from LubaTV, so the window may be behind it. Pinning it on top
         // and unpinning it brings it to the front without changing its setting.
-        let ontop = replies.last().and_then(|r| r.get("data")).and_then(Value::as_bool);
+        let ontop = replies
+            .last()
+            .and_then(|r| r.get("data"))
+            .and_then(Value::as_bool);
         if ontop == Some(false) {
             _ = ipc::send(
                 &self.ipc_path,
@@ -503,10 +506,7 @@ fn get_play_args(
             .find(|(name, _)| *name == OPT_YTDL_RAW_OPTIONS)
         {
             Some((_, value)) => *value = format!("{value},{LIVE_YTDL_SOCKET_TIMEOUT}"),
-            None => file_options.push((
-                OPT_YTDL_RAW_OPTIONS,
-                LIVE_YTDL_SOCKET_TIMEOUT.to_string(),
-            )),
+            None => file_options.push((OPT_YTDL_RAW_OPTIONS, LIVE_YTDL_SOCKET_TIMEOUT.to_string())),
         }
     }
 
@@ -602,7 +602,11 @@ mod errors {
         } else {
             classify(output)
         };
-        let output = if output.is_empty() { "(nothing)" } else { output };
+        let output = if output.is_empty() {
+            "(nothing)"
+        } else {
+            output
+        };
         format!("{summary}\n{hint}\n\nmpv output:\n{output}")
     }
 
@@ -700,11 +704,15 @@ mod errors {
         #[test]
         fn http_status_from_ffmpeg_or_yt_dlp() {
             assert_eq!(
-                summary("[ffmpeg] http: HTTP error 403 Forbidden\nFailed to open http://127.0.0.1:8765/403.ts."),
+                summary(
+                    "[ffmpeg] http: HTTP error 403 Forbidden\nFailed to open http://127.0.0.1:8765/403.ts."
+                ),
                 "The provider refused this channel (HTTP 403)"
             );
             assert_eq!(
-                summary("Failed to open http://127.0.0.1:8765/401.ts.\n[ytdl_hook] ERROR: [generic] Unable to download webpage: HTTP Error 401: Unauthorized (caused by <HTTPError 401: Unauthorized>)\n[ytdl_hook] youtube-dl failed: unexpected error occurred"),
+                summary(
+                    "Failed to open http://127.0.0.1:8765/401.ts.\n[ytdl_hook] ERROR: [generic] Unable to download webpage: HTTP Error 401: Unauthorized (caused by <HTTPError 401: Unauthorized>)\n[ytdl_hook] youtube-dl failed: unexpected error occurred"
+                ),
                 "The provider rejected your login (HTTP 401)"
             );
             assert_eq!(
@@ -724,19 +732,27 @@ mod errors {
         #[test]
         fn network_failures() {
             assert_eq!(
-                summary("[ffmpeg] tcp: Failed to resolve hostname nonexistent.invalid: The name does not resolve for the supplied parameters\nFailed to open http://nonexistent.invalid/x.ts.\n[ytdl_hook] ERROR: [generic] Unable to download webpage: HTTPConnection(host='nonexistent.invalid', port=80): Failed to resolve 'nonexistent.invalid' ([Errno 11001] getaddrinfo failed)"),
+                summary(
+                    "[ffmpeg] tcp: Failed to resolve hostname nonexistent.invalid: The name does not resolve for the supplied parameters\nFailed to open http://nonexistent.invalid/x.ts.\n[ytdl_hook] ERROR: [generic] Unable to download webpage: HTTPConnection(host='nonexistent.invalid', port=80): Failed to resolve 'nonexistent.invalid' ([Errno 11001] getaddrinfo failed)"
+                ),
                 "Couldn't find the provider's server"
             );
             assert_eq!(
-                summary("Failed to open http://127.0.0.1:8765/hang.ts.\n[ytdl_hook] ERROR: [generic] Unable to download webpage: HTTPConnectionPool(host='127.0.0.1', port=8765): Read timed out. (read timeout=5.0)"),
+                summary(
+                    "Failed to open http://127.0.0.1:8765/hang.ts.\n[ytdl_hook] ERROR: [generic] Unable to download webpage: HTTPConnectionPool(host='127.0.0.1', port=8765): Read timed out. (read timeout=5.0)"
+                ),
                 "The provider's server didn't respond"
             );
             assert_eq!(
-                summary("[ffmpeg] tls: Creating security context failed (0x80090308)\nFailed to open https://127.0.0.1:8765/x.ts.\n[ytdl_hook] ERROR: [generic] Unable to download webpage: [SSL: WRONG_VERSION_NUMBER] wrong version number"),
+                summary(
+                    "[ffmpeg] tls: Creating security context failed (0x80090308)\nFailed to open https://127.0.0.1:8765/x.ts.\n[ytdl_hook] ERROR: [generic] Unable to download webpage: [SSL: WRONG_VERSION_NUMBER] wrong version number"
+                ),
                 "Couldn't make a secure connection to the provider"
             );
             assert_eq!(
-                summary("[ytdl_hook] ERROR: Unsupported URL: http://127.0.0.1:8765/html.ts\n[ytdl_hook] youtube-dl failed: unexpected error occurred\nFailed to recognize file format."),
+                summary(
+                    "[ytdl_hook] ERROR: Unsupported URL: http://127.0.0.1:8765/html.ts\n[ytdl_hook] youtube-dl failed: unexpected error occurred\nFailed to recognize file format."
+                ),
                 "This address doesn't lead to a playable stream"
             );
         }
@@ -778,7 +794,9 @@ mod ipc {
     }
 
     #[cfg(windows)]
-    async fn connect(path: &str) -> std::io::Result<tokio::net::windows::named_pipe::NamedPipeClient> {
+    async fn connect(
+        path: &str,
+    ) -> std::io::Result<tokio::net::windows::named_pipe::NamedPipeClient> {
         let mut attempt = 1;
         loop {
             match tokio::net::windows::named_pipe::ClientOptions::new().open(path) {
@@ -815,7 +833,10 @@ mod ipc {
         .context("mpv did not answer")?
     }
 
-    async fn exchange<S: AsyncRead + AsyncWrite>(stream: S, commands: &[Value]) -> Result<Vec<Value>> {
+    async fn exchange<S: AsyncRead + AsyncWrite>(
+        stream: S,
+        commands: &[Value],
+    ) -> Result<Vec<Value>> {
         let (read, mut write) = tokio::io::split(stream);
         let mut request = String::new();
         for (id, command) in commands.iter().enumerate() {
@@ -873,7 +894,9 @@ mod tests {
         PlayArgs {
             urls: vec![url.to_string()],
             file_options,
-            global: ["--vo=null", "--ao=null", ARG_MSG_LEVEL].map(String::from).to_vec(),
+            global: ["--vo=null", "--ao=null", ARG_MSG_LEVEL]
+                .map(String::from)
+                .to_vec(),
             live: true,
             save_position: false,
         }
@@ -922,23 +945,27 @@ mod tests {
         assert_eq!(property(&window, "user-agent").await, "Agent/1");
         let first_play = {
             let window = window.clone();
-            tokio::spawn(async move {
-                window.wait(first.session, &CancellationToken::new()).await
-            })
+            tokio::spawn(async move { window.wait(first.session, &CancellationToken::new()).await })
         };
 
         // A title with commas, equals signs and non-ASCII text survives the quoting.
         let second = owner("2");
         let title = "Second = canal, ação";
         window
-            .load(second.clone(), &args("av://lavfi:testsrc2=duration=60", title, &[]))
+            .load(
+                second.clone(),
+                &args("av://lavfi:testsrc2=duration=60", title, &[]),
+            )
             .await
             .unwrap();
         // The first play() call ends without an error, and the window keeps running.
         first_play.await.unwrap().unwrap();
         assert!(!window.exited.is_cancelled());
         eventually(&window, "title", title).await;
-        assert_eq!(property(&window, "path").await, "av://lavfi:testsrc2=duration=60");
+        assert_eq!(
+            property(&window, "path").await,
+            "av://lavfi:testsrc2=duration=60"
+        );
         // Per-file options of the first channel don't carry over.
         assert_ne!(property(&window, "user-agent").await, "Agent/1");
         assert_eq!(property(&window, "loop-playlist").await, "inf");
@@ -946,7 +973,10 @@ mod tests {
         // A channel that fails closes the window and reports mpv's error to its play() call.
         let third = owner("3");
         window
-            .load(third.clone(), &args("http://nonexistent.invalid/stream.ts", "Broken", &[]))
+            .load(
+                third.clone(),
+                &args("http://nonexistent.invalid/stream.ts", "Broken", &[]),
+            )
             .await
             .unwrap();
         let error = window
@@ -954,11 +984,20 @@ mod tests {
             .await
             .unwrap_err();
         let error = error.to_string();
-        assert!(error.starts_with("Couldn't find the provider's server\n"), "{error}");
+        assert!(
+            error.starts_with("Couldn't find the provider's server\n"),
+            "{error}"
+        );
         assert!(error.contains("mpv output:\n"), "{error}");
         assert!(error.contains("Failed to open"), "{error}");
         assert!(window.exited.is_cancelled());
-        assert!(!WINDOWS.lock().unwrap().iter().any(|w| Arc::ptr_eq(w, &window)));
+        assert!(
+            !WINDOWS
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|w| Arc::ptr_eq(w, &window))
+        );
     }
 
     #[tokio::test]
@@ -985,7 +1024,10 @@ mod tests {
         let first = owner("1");
         let window = Window::open(&args(TEST_VIDEO, "First", &[]), first.clone()).unwrap();
         let token = CancellationToken::new();
-        window.load(owner("2"), &args(TEST_VIDEO, "Second", &[])).await.unwrap();
+        window
+            .load(owner("2"), &args(TEST_VIDEO, "Second", &[]))
+            .await
+            .unwrap();
         token.cancel();
         window.wait(first.session, &token).await.unwrap();
         assert!(!window.exited.is_cancelled());
@@ -1001,7 +1043,9 @@ mod tests {
         tokio::spawn(async move {
             let mut held = Vec::new();
             loop {
-                let Ok((mut socket, _)) = listener.accept().await else { return };
+                let Ok((mut socket, _)) = listener.accept().await else {
+                    return;
+                };
                 match response {
                     Some(response) => {
                         tokio::spawn(async move {
@@ -1034,7 +1078,10 @@ mod tests {
     #[ignore = "needs mpv"]
     async fn refused_channel_gets_a_readable_error() {
         let _serial = serial();
-        let url = server(Some("HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")).await;
+        let url = server(Some(
+            "HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+        ))
+        .await;
         let first = owner("1");
         let window = Window::open(&live(&url), first.clone()).unwrap();
         let error = window
@@ -1078,7 +1125,9 @@ mod tests {
         let _serial = serial();
         let windows: Vec<Arc<Window>> = tauri::async_runtime::block_on(async {
             (0..2)
-                .map(|i| Window::open(&args(TEST_VIDEO, "Channel", &[]), owner(&i.to_string())).unwrap())
+                .map(|i| {
+                    Window::open(&args(TEST_VIDEO, "Channel", &[]), owner(&i.to_string())).unwrap()
+                })
                 .collect()
         });
         close_all();

@@ -33,10 +33,7 @@ fn init_logger() -> bool {
 }
 
 fn get_and_create_log_path() -> String {
-    let mut path = crate::utils::project_dirs()
-        .unwrap()
-        .cache_dir()
-        .to_owned();
+    let mut path = crate::utils::project_dirs().unwrap().cache_dir().to_owned();
     path.push("logs");
     if !path.exists() {
         std::fs::create_dir_all(&path).unwrap();
