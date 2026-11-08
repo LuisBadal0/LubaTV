@@ -191,12 +191,13 @@ fn build_tray_icon(app: &mut tauri::App) -> anyhow::Result<()> {
             }
             _ => {}
         })
-        .on_tray_icon_event(|tray, event| match event {
-            TrayIconEvent::Click {
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
                 button: MouseButton::Left,
                 button_state: MouseButtonState::Up,
                 ..
-            } => {
+            } = event
+            {
                 let app = tray.app_handle();
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.unminimize();
@@ -204,7 +205,6 @@ fn build_tray_icon(app: &mut tauri::App) -> anyhow::Result<()> {
                     let _ = window.set_focus();
                 }
             }
-            _ => {}
         })
         .icon(app.default_window_icon().unwrap().clone())
         .build(app)?;
@@ -233,7 +233,7 @@ async fn sync_player_files(app: AppHandle) -> Result<player_files::Status, Strin
 }
 
 fn map_err_frontend(e: Error) -> String {
-    return format!("{:?}", e);
+    format!("{:?}", e)
 }
 
 #[tauri::command(async)]
@@ -406,7 +406,7 @@ fn get_custom_channel_extra_data(
 
 #[tauri::command(async)]
 fn add_custom_source(name: String) -> Result<(), String> {
-    sql::do_tx(|tx| sql::create_or_find_source_by_name(tx, &mut sql::get_custom_source(name)))
+    sql::do_tx(|tx| sql::create_or_find_source_by_name(tx, &sql::get_custom_source(name)))
         .map_err(map_err_frontend)?;
     Ok(())
 }

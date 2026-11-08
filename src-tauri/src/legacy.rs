@@ -138,7 +138,12 @@ fn deletable_folders(candidates: Vec<PathBuf>) -> Vec<PathBuf> {
         let named = dir
             .file_name()
             .is_some_and(|n| n.to_string_lossy().contains(LEGACY_NAME));
-        if named && dir.is_dir() && !folders.iter().any(|f| dir.starts_with(f) || f.starts_with(&dir)) {
+        if named
+            && dir.is_dir()
+            && !folders
+                .iter()
+                .any(|f| dir.starts_with(f) || f.starts_with(&dir))
+        {
             folders.push(dir);
         }
     }
@@ -147,11 +152,11 @@ fn deletable_folders(candidates: Vec<PathBuf>) -> Vec<PathBuf> {
 
 /// Removes the empty `fredol` folder left on Windows after deleting `fredol\open-tv`.
 fn remove_empty_legacy_parent(folder: &Path) {
-    if let Some(parent) = folder.parent() {
-        if parent.file_name().is_some_and(|n| n == "fredol") {
-            // remove_dir only succeeds on an empty folder.
-            _ = std::fs::remove_dir(parent);
-        }
+    if let Some(parent) = folder.parent()
+        && parent.file_name().is_some_and(|n| n == "fredol")
+    {
+        // remove_dir only succeeds on an empty folder.
+        _ = std::fs::remove_dir(parent);
     }
 }
 
@@ -190,7 +195,10 @@ mod test_legacy {
 
         copy_database(&legacy, &data).unwrap();
         assert_eq!(std::fs::read(data.join(sql::DB_NAME)).unwrap(), b"db");
-        assert_eq!(std::fs::read(data.join(format!("{}-wal", sql::DB_NAME))).unwrap(), b"wal");
+        assert_eq!(
+            std::fs::read(data.join(format!("{}-wal", sql::DB_NAME))).unwrap(),
+            b"wal"
+        );
         assert!(!data.join(format!("{}-shm", sql::DB_NAME)).exists());
 
         // Once LubaTV has its own folder (e.g. after "Delete everything"), never copy again.

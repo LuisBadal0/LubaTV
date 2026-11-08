@@ -1,7 +1,7 @@
 use chrono::Local;
 use std::{fs, sync::LazyLock};
 
-static USE_LOGGER: LazyLock<bool> = LazyLock::new(|| init_logger());
+static USE_LOGGER: LazyLock<bool> = LazyLock::new(init_logger);
 
 pub fn log(message: String) {
     if *USE_LOGGER {
@@ -27,22 +27,19 @@ fn init_logger() -> bool {
         Ok(_) => true,
         Err(e) => {
             eprint!("Failed to init logger, {:?}", e);
-            return false;
+            false
         }
     }
 }
 
 fn get_and_create_log_path() -> String {
-    let mut path = crate::utils::project_dirs()
-        .unwrap()
-        .cache_dir()
-        .to_owned();
+    let mut path = crate::utils::project_dirs().unwrap().cache_dir().to_owned();
     path.push("logs");
     if !path.exists() {
         std::fs::create_dir_all(&path).unwrap();
     }
     path.push(get_log_name());
-    return path.to_string_lossy().to_string();
+    path.to_string_lossy().to_string()
 }
 
 fn get_log_name() -> String {

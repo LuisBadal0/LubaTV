@@ -48,11 +48,11 @@ fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Chi
             command.arg("-headers");
             command.arg(format!("Origin: {origin}"));
         }
-        if let Some(ignore_ssl) = headers.ignore_ssl {
-            if ignore_ssl {
-                command.arg("-tls_verify");
-                command.arg("0");
-            }
+        if let Some(ignore_ssl) = headers.ignore_ssl
+            && ignore_ssl
+        {
+            command.arg("-tls_verify");
+            command.arg("0");
         }
     }
     #[cfg(target_os = "windows")]
@@ -97,7 +97,7 @@ async fn start_web_server(
             rx.await.ok();
         });
     let handle = tokio::spawn(server);
-    return Ok((tx, handle));
+    Ok((tx, handle))
 }
 
 pub async fn start_restream(
@@ -143,9 +143,7 @@ fn get_playlist_dir(mut folder: PathBuf) -> String {
 }
 
 fn get_restream_folder() -> Result<PathBuf> {
-    let mut path = crate::utils::project_dirs()?
-        .cache_dir()
-        .to_owned();
+    let mut path = crate::utils::project_dirs()?.cache_dir().to_owned();
     path.push("restream");
     if !path.exists() {
         std::fs::create_dir_all(&path).unwrap();
@@ -217,7 +215,7 @@ fn get_ips(port: u16) -> Result<Vec<String>> {
     Ok(if_addrs::get_if_addrs()?
         .iter()
         .filter(|i| i.ip().is_ipv4() && !i.ip().is_loopback())
-        .map(|i| format!("http://{}:{port}/stream.m3u8", i.ip().to_string()))
+        .map(|i| format!("http://{}:{port}/stream.m3u8", i.ip()))
         .collect())
 }
 
