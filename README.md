@@ -95,7 +95,7 @@ On macOS, Cmd works in place of Ctrl for search and the views.
 
 ## Building from source
 
-You need [Node.js](https://nodejs.org/) 22.12 or newer, [Rust](https://www.rust-lang.org/tools/install) 1.91 or newer, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform.
+You need [Node.js](https://nodejs.org/) 24 or newer (its npm 11 matches `package-lock.json`; the npm 10 in Node 22 rejects it), [Rust](https://www.rust-lang.org/tools/install) 1.91 or newer, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform.
 
 ```
 npm ci
