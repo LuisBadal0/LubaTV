@@ -61,12 +61,13 @@ function hash(text: string): number {
 }
 
 @Component({
-  selector: "app-channel-tile",
-  templateUrl: "./channel-tile.component.html",
-  styleUrl: "./channel-tile.component.css",
-  // Tiles only re-render when their inputs change, on their own events, or via markForCheck
-  // after async work, instead of on every change detection pass of the whole grid.
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: "app-channel-tile",
+    templateUrl: "./channel-tile.component.html",
+    styleUrl: "./channel-tile.component.css",
+    // Tiles only re-render when their inputs change, on their own events, or via markForCheck
+    // after async work, instead of on every change detection pass of the whole grid.
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit {
   constructor(

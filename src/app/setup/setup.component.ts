@@ -12,9 +12,10 @@ import { ErrorService } from "../error.service";
 import { ConfirmDeleteModalComponent } from "../confirm-delete-modal/confirm-delete-modal.component";
 
 @Component({
-  selector: "app-setup",
-  templateUrl: "./setup.component.html",
-  styleUrl: "./setup.component.css",
+    selector: "app-setup",
+    templateUrl: "./setup.component.html",
+    styleUrl: "./setup.component.css",
+    standalone: false
 })
 export class SetupComponent {
   constructor(

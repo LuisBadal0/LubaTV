@@ -7,10 +7,11 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
  * by AppComponent.
  */
 @Component({
-  selector: "app-window-controls",
-  templateUrl: "./window-controls.component.html",
-  styleUrl: "./window-controls.component.css",
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: "app-window-controls",
+    templateUrl: "./window-controls.component.html",
+    styleUrl: "./window-controls.component.css",
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class WindowControlsComponent implements OnInit, OnDestroy {
   maximized = false;

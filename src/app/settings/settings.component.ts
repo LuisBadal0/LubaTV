@@ -14,9 +14,10 @@ import { getVersion } from "@tauri-apps/api/app";
 import { UpdateService } from "../update.service";
 
 @Component({
-  selector: "app-settings",
-  templateUrl: "./settings.component.html",
-  styleUrl: "./settings.component.css",
+    selector: "app-settings",
+    templateUrl: "./settings.component.html",
+    styleUrl: "./settings.component.css",
+    standalone: false
 })
 export class SettingsComponent {
   subscriptions: Subscription[] = [];

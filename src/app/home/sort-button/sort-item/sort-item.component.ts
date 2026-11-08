@@ -3,9 +3,10 @@ import { SortType, getSortTypeText } from "../../../models/sortType";
 import { MemoryService } from "../../../memory.service";
 
 @Component({
-  selector: "app-sort-item",
-  templateUrl: "./sort-item.component.html",
-  styleUrl: "./sort-item.component.css",
+    selector: "app-sort-item",
+    templateUrl: "./sort-item.component.html",
+    styleUrl: "./sort-item.component.css",
+    standalone: false
 })
 export class SortItemComponent {
   constructor(public memory: MemoryService) {}

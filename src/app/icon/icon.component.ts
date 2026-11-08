@@ -46,13 +46,14 @@ const PATHS: Record<string, string> = {
 
 /** Inline SVG icon that inherits the current text colour. */
 @Component({
-  selector: "app-icon",
-  template: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path [attr.d]="path" /></svg>`,
-  styles: [
-    `:host { display: inline-flex; width: 1.125rem; height: 1.125rem; flex: 0 0 auto; }
+    selector: "app-icon",
+    template: `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path [attr.d]="path" /></svg>`,
+    styles: [
+        `:host { display: inline-flex; width: 1.125rem; height: 1.125rem; flex: 0 0 auto; }
      svg { width: 100%; height: 100%; fill: currentColor; }`,
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class IconComponent {
   @Input() name = "";
