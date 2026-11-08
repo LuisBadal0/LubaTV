@@ -6,14 +6,20 @@
 <main class="content">
   <header class="topbar" data-tauri-drag-region>
     <div class="title" data-tauri-drag-region>
-      <button *ngIf="nodeStack.hasNodes()" type="button" class="lt-icon-btn back-btn" (click)="goBack()"
-        title="Back (Esc)">
-        <app-icon name="back" />
-      </button>
+      @if (nodeStack.hasNodes()) {
+        <button type="button" class="lt-icon-btn back-btn" (click)="goBack()"
+          title="Back (Esc)">
+          <app-icon name="back" />
+        </button>
+      }
       <div class="title-text" data-tauri-drag-region>
-        <p class="crumb" *ngIf="nodeStack.hasNodes()" data-tauri-drag-region>{{ viewTitle() }}</p>
+        @if (nodeStack.hasNodes()) {
+          <p class="crumb" data-tauri-drag-region>{{ viewTitle() }}</p>
+        }
         <h1 [title]="pageTitle()" data-tauri-drag-region>{{ pageTitle() }}</h1>
-        <p class="subtitle" *ngIf="!nodeStack.hasNodes()" data-tauri-drag-region>{{ pageSubtitle() }}</p>
+        @if (!nodeStack.hasNodes()) {
+          <p class="subtitle" data-tauri-drag-region>{{ pageSubtitle() }}</p>
+        }
       </div>
     </div>
 
@@ -21,82 +27,102 @@
       <app-icon name="search" class="search-icon" />
       <input autocomplete="off" type="text" id="search" #search class="search-input"
         placeholder="Search channels, movies, series" />
-      <span class="kbd">Ctrl F</span>
-    </div>
+        <span class="kbd">Ctrl F</span>
+      </div>
 
-    <div class="actions">
-      <button type="button" class="lt-icon-btn" [class.active]="filters?.use_keywords" (click)="toggleKeywords()"
-        title="Search by keywords">
-        <app-icon name="tag" />
-      </button>
-      <app-sort-button></app-sort-button>
-      <button type="button" class="lt-icon-btn reload-btn" (click)="reload()" title="Reload view">
-        <app-icon name="refresh" />
-      </button>
-      <button type="button" class="lt-icon-btn" [matMenuTriggerFor]="bulkMenu"
-        [class.disabled]="filters?.series_id && !filters?.season" title="Bulk actions">
-        <app-icon name="dots" />
-      </button>
-      <mat-menu #bulkMenu="matMenu">
-        <button mat-menu-item (click)="bulkAction(bulkActionType.Hide)"><app-icon name="eyeOff" />Hide all</button>
-        <button mat-menu-item (click)="bulkAction(bulkActionType.Unhide)"><app-icon name="eye" />Unhide all</button>
-        <button mat-menu-item (click)="bulkAction(bulkActionType.Favorite)"
+      <div class="actions">
+        <button type="button" class="lt-icon-btn" [class.active]="filters?.use_keywords" (click)="toggleKeywords()"
+          title="Search by keywords">
+          <app-icon name="tag" />
+        </button>
+        <app-sort-button></app-sort-button>
+        <button type="button" class="lt-icon-btn reload-btn" (click)="reload()" title="Reload view">
+          <app-icon name="refresh" />
+        </button>
+        <button type="button" class="lt-icon-btn" [matMenuTriggerFor]="bulkMenu"
+          [class.disabled]="filters?.series_id && !filters?.season" title="Bulk actions">
+          <app-icon name="dots" />
+        </button>
+        <mat-menu #bulkMenu="matMenu">
+          <button mat-menu-item (click)="bulkAction(bulkActionType.Hide)"><app-icon name="eyeOff" />Hide all</button>
+          <button mat-menu-item (click)="bulkAction(bulkActionType.Unhide)"><app-icon name="eye" />Unhide all</button>
+          <button mat-menu-item (click)="bulkAction(bulkActionType.Favorite)"
           [disabled]="filters?.view_type == viewModeEnum.Categories"><app-icon name="star" />Favorite all</button>
-        <button mat-menu-item (click)="bulkAction(bulkActionType.Unfavorite)"
+          <button mat-menu-item (click)="bulkAction(bulkActionType.Unfavorite)"
           [disabled]="filters?.view_type == viewModeEnum.Categories"><app-icon name="starOff" />Unfavorite all</button>
-      </mat-menu>
-    </div>
-  </header>
+        </mat-menu>
+      </div>
+    </header>
 
-  <div class="chips" *ngIf="filtersVisible()">
-    <button type="button" id="filter-0" class="chip" [class.on]="chkLiveStream"
-      (click)="toggleMediaType(mediaTypeEnum.livestream)" [attr.aria-pressed]="chkLiveStream">
-      <app-icon name="tv" />Live TV
+    @if (filtersVisible()) {
+      <div class="chips">
+        <button type="button" id="filter-0" class="chip" [class.on]="chkLiveStream"
+          (click)="toggleMediaType(mediaTypeEnum.livestream)" [attr.aria-pressed]="chkLiveStream">
+          <app-icon name="tv" />Live TV
+        </button>
+        <button type="button" id="filter-1" class="chip" [class.on]="chkMovie"
+          (click)="toggleMediaType(mediaTypeEnum.movie)" [attr.aria-pressed]="chkMovie">
+          <app-icon name="film" />{{ hasXtream ? "Movies" : "Movies & series" }}
+        </button>
+        @if (hasXtream) {
+          <button type="button" id="filter-2" class="chip" [class.on]="chkSerie"
+            (click)="toggleMediaType(mediaTypeEnum.serie)" [attr.aria-pressed]="chkSerie">
+            <app-icon name="series" />Series
+          </button>
+        }
+      </div>
+    }
+
+    @if (showRecent()) {
+      <section class="recent">
+        <div class="section-head">
+          <h2>Continue watching</h2>
+          <button type="button" class="link-btn" (click)="switchMode(viewModeEnum.History)">See history</button>
+        </div>
+        <div class="recent-grid">
+          @for (channel of recent; track trackChannel(i, channel); let i = $index) {
+            <app-channel-tile variant="wide"
+              idPrefix="recent-" [id]="i" [channel]="channel" [viewMode]="viewModeEnum.History"
+            [lastWatched]="lastWatched[channel.id!]"></app-channel-tile>
+          }
+        </div>
+        <div class="section-head">
+          <h2>Everything</h2>
+        </div>
+      </section>
+    }
+
+    <div class="tile-grid" [class.cats]="isCategoryGrid()" [@fade]="channelsVisible ? 'visible' : 'hidden'">
+      @for (channel of channels; track trackChannel(i, channel); let i = $index) {
+        <app-channel-tile [attr.id]="i == 0 ? 'first' : null"
+          [id]="i" [channel]="channel"
+        [viewMode]="viewType" [preview]="previews[channel.id!]"></app-channel-tile>
+      }
+    </div>
+
+    @if (filters && !loading && channels.length == 0) {
+      <div class="empty-state">
+        <app-icon name="tv" />
+        <p class="empty-title">Nothing to show here</p>
+        @if (filters.query) {
+          <p class="empty-hint">No results for “{{ filters.query }}”. Try another search.</p>
+        }
+        @if (!filters.query) {
+          <p class="empty-hint">Try another view or turn on more media types.</p>
+        }
+      </div>
+    }
+
+    @if (reachedMax === false) {
+      <button [@fade]="channelsVisible ? 'visible' : 'hidden'" (click)="loadMore()"
+        type="button" class="btn btn-secondary load-more">
+        Load more
+      </button>
+    }
+  </main>
+
+  @if (showScrollTop) {
+    <button type="button" (click)="scrollToTop()" class="scroll-to-top" title="Back to top">
+      <app-icon name="chevronUp" />
     </button>
-    <button type="button" id="filter-1" class="chip" [class.on]="chkMovie"
-      (click)="toggleMediaType(mediaTypeEnum.movie)" [attr.aria-pressed]="chkMovie">
-      <app-icon name="film" />{{ hasXtream ? "Movies" : "Movies & series" }}
-    </button>
-    <button *ngIf="hasXtream" type="button" id="filter-2" class="chip" [class.on]="chkSerie"
-      (click)="toggleMediaType(mediaTypeEnum.serie)" [attr.aria-pressed]="chkSerie">
-      <app-icon name="series" />Series
-    </button>
-  </div>
-
-  <section class="recent" *ngIf="showRecent()">
-    <div class="section-head">
-      <h2>Continue watching</h2>
-      <button type="button" class="link-btn" (click)="switchMode(viewModeEnum.History)">See history</button>
-    </div>
-    <div class="recent-grid">
-      <app-channel-tile *ngFor="let channel of recent; let i = index; trackBy: trackChannel" variant="wide"
-        idPrefix="recent-" [id]="i" [channel]="channel" [viewMode]="viewModeEnum.History"
-        [lastWatched]="lastWatched[channel.id!]"></app-channel-tile>
-    </div>
-    <div class="section-head">
-      <h2>Everything</h2>
-    </div>
-  </section>
-
-  <div class="tile-grid" [class.cats]="isCategoryGrid()" [@fade]="channelsVisible ? 'visible' : 'hidden'">
-    <app-channel-tile [attr.id]="i == 0 ? 'first' : null"
-      *ngFor="let channel of channels; let i = index; trackBy: trackChannel" [id]="i" [channel]="channel"
-      [viewMode]="viewType" [preview]="previews[channel.id!]"></app-channel-tile>
-  </div>
-
-  <div class="empty-state" *ngIf="filters && !loading && channels.length == 0">
-    <app-icon name="tv" />
-    <p class="empty-title">Nothing to show here</p>
-    <p class="empty-hint" *ngIf="filters.query">No results for “{{ filters.query }}”. Try another search.</p>
-    <p class="empty-hint" *ngIf="!filters.query">Try another view or turn on more media types.</p>
-  </div>
-
-  <button [@fade]="channelsVisible ? 'visible' : 'hidden'" *ngIf="reachedMax === false" (click)="loadMore()"
-    type="button" class="btn btn-secondary load-more">
-    Load more
-  </button>
-</main>
-
-<button type="button" *ngIf="showScrollTop" (click)="scrollToTop()" class="scroll-to-top" title="Back to top">
-  <app-icon name="chevronUp" />
-</button>
+  }

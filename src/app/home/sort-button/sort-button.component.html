@@ -4,11 +4,11 @@
   </svg>
 </button>
 <div style="visibility: hidden; position: fixed" [style.left.px]="menuTopLeftPosition.x"
-  [style.top.px]="menuTopLeftPosition.y" [matMenuTriggerFor]="rightMenu"></div>
+[style.top.px]="menuTopLeftPosition.y" [matMenuTriggerFor]="rightMenu"></div>
 <mat-menu #rightMenu="matMenu">
   <ng-template matMenuContent let-item="item">
-    <ng-container *ngFor="let sortType of sortTypes">
+    @for (sortType of sortTypes; track sortType) {
       <app-sort-item [sortType]="sortType"></app-sort-item>
-    </ng-container>
+    }
   </ng-template>
 </mat-menu>

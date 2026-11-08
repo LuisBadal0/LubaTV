@@ -5,21 +5,25 @@
   </div>
 
   <nav class="nav" aria-label="Views">
-    <button *ngFor="let item of views; let i = index" type="button" [id]="'viewMode-' + i" class="nav-item"
-      [class.on]="active === item.view" (click)="choose(item.view)" [title]="item.label">
-      <app-icon [name]="item.icon" />
-      <span class="label">{{ item.label }}</span>
-    </button>
+    @for (item of views; track item; let i = $index) {
+      <button type="button" [id]="'viewMode-' + i" class="nav-item"
+        [class.on]="active === item.view" (click)="choose(item.view)" [title]="item.label">
+        <app-icon [name]="item.icon" />
+        <span class="label">{{ item.label }}</span>
+      </button>
+    }
   </nav>
 
-  <ng-container *ngIf="sources.length">
+  @if (sources.length) {
     <div class="sect">Sources</div>
-    <button *ngFor="let source of sources" type="button" class="src" (click)="openSettings('sources')"
-      [title]="source.name + ' · ' + sourceKind(source)">
-      <span class="dot" [style.background]="sourceColor(source.id)"></span>
-      <span class="label">{{ source.name }}</span>
-    </button>
-  </ng-container>
+    @for (source of sources; track source) {
+      <button type="button" class="src" (click)="openSettings('sources')"
+        [title]="source.name + ' · ' + sourceKind(source)">
+        <span class="dot" [style.background]="sourceColor(source.id)"></span>
+        <span class="label">{{ source.name }}</span>
+      </button>
+    }
+  }
 
   <div class="foot">
     <button type="button" class="nav-item" [class.on]="active === 'settings'" (click)="openSettings()" title="Settings">

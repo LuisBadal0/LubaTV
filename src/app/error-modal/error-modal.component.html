@@ -1,36 +1,35 @@
 <div class="modal-header">
-    <h4 class="modal-title lbl">{{ playback ? "Couldn't play this channel" : "Error" }}</h4>
-    <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="activeModal.close('Cross click')"></button>
+  <h4 class="modal-title lbl">{{ playback ? "Couldn't play this channel" : "Error" }}</h4>
+  <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="activeModal.close('Cross click')"></button>
 </div>
 <div class="modal-body">
-    <ng-container *ngIf="playback as failure; else appError">
-        <p class="summary">{{ failure.summary }}</p>
-        <p>{{ failure.hint }}</p>
-        <p class="lbl small mb-1">What mpv reported:</p>
-        <textarea autocomplete="false" spellcheck="false" readonly class="error-area output">{{ failure.output }}</textarea>
-        <p class="small mt-2 mb-0">
-            If this looks like a problem with LubaTV rather than the provider,
-            <a target="_blank" href="https://github.com/LuisBadal0/LubaTV/issues">report it here</a> with the text above.
-        </p>
-    </ng-container>
-    <ng-template #appError>
-        <p class="lbl">
-            The following error has occured, <a target="_blank" href="https://github.com/LuisBadal0/LubaTV/issues">you may report it here</a>
-        </p>
-        <p>
-            You may also find detailed logs of what could have caused the errors in $XDG_CACHE_HOME. That corresponds to:
-        </p>
-        <ul>
-            <li>Windows: <span class="selectable">%localappdata%\luisbadalo\lubatv\cache\logs</span></li>
-            <li>Linux: <span class="selectable">~/.cache/lubatv/logs</span> or <span class="selectable">~/.var/app/dev.luisbadalo.lubatv/cache/lubatv/logs</span></li>
-            <li>MacOS: <span class="selectable">~/Library/Caches/dev.luisbadalo.lubatv/logs</span></li>
-        </ul>
-        <p>Please attach those logs (if they exist) and the error below to your bug request. Thank you!</p>
-        <p>If you encounter weird/persistent errors, please try using the "Delete everything" button in settings or the small nuke button at the bottom right of the screen where present</p>
-        <textarea autocomplete="false" spellcheck="false" readonly class="error-area">{{error}}</textarea>
-    </ng-template>
+  @if (playback; as failure) {
+    <p class="summary">{{ failure.summary }}</p>
+    <p>{{ failure.hint }}</p>
+    <p class="lbl small mb-1">What mpv reported:</p>
+    <textarea autocomplete="false" spellcheck="false" readonly class="error-area output">{{ failure.output }}</textarea>
+    <p class="small mt-2 mb-0">
+      If this looks like a problem with LubaTV rather than the provider,
+      <a target="_blank" href="https://github.com/LuisBadal0/LubaTV/issues">report it here</a> with the text above.
+    </p>
+  } @else {
+    <p class="lbl">
+      The following error has occured, <a target="_blank" href="https://github.com/LuisBadal0/LubaTV/issues">you may report it here</a>
+    </p>
+    <p>
+      You may also find detailed logs of what could have caused the errors in $XDG_CACHE_HOME. That corresponds to:
+    </p>
+    <ul>
+      <li>Windows: <span class="selectable">%localappdata%\luisbadalo\lubatv\cache\logs</span></li>
+      <li>Linux: <span class="selectable">~/.cache/lubatv/logs</span> or <span class="selectable">~/.var/app/dev.luisbadalo.lubatv/cache/lubatv/logs</span></li>
+      <li>MacOS: <span class="selectable">~/Library/Caches/dev.luisbadalo.lubatv/logs</span></li>
+    </ul>
+    <p>Please attach those logs (if they exist) and the error below to your bug request. Thank you!</p>
+    <p>If you encounter weird/persistent errors, please try using the "Delete everything" button in settings or the small nuke button at the bottom right of the screen where present</p>
+    <textarea autocomplete="false" spellcheck="false" readonly class="error-area">{{error}}</textarea>
+  }
 </div>
 <div class="modal-footer">
-    <button class="btn btn-secondary" (click)="copy()">Copy</button>
-    <button class="btn btn-danger ms-1" (click)="activeModal.close('close')">Close</button>
+  <button class="btn btn-secondary" (click)="copy()">Copy</button>
+  <button class="btn btn-danger ms-1" (click)="activeModal.close('close')">Close</button>
 </div>

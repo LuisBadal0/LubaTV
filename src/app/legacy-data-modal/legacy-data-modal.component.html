@@ -7,7 +7,9 @@
     data is still on this computer ({{ sizeText }}):
   </p>
   <ul class="folders">
-    <li *ngFor="let folder of legacy?.folders" class="selectable">{{ folder }}</li>
+    @for (folder of legacy?.folders; track folder) {
+      <li class="selectable">{{ folder }}</li>
+    }
   </ul>
   <p>
     Delete it if you no longer use that app. If you still use it, keep it: that app needs these
