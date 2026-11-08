@@ -10,10 +10,12 @@
 
   <div class="settings-layout">
     <nav class="subnav" aria-label="Settings sections">
-      <button *ngFor="let section of sections" type="button" [class.on]="activeSection === section.id"
-        (click)="scrollTo(section.id)">
-        {{ section.label }}
-      </button>
+      @for (section of sections; track section) {
+        <button type="button" [class.on]="activeSection === section.id"
+          (click)="scrollTo(section.id)">
+          {{ section.label }}
+        </button>
+      }
     </nav>
 
     <div class="panel">
@@ -30,7 +32,9 @@
         <div class="opt">
           <div class="tx"><b>Default sort</b><span>Order of channels in every view</span></div>
           <select (ngModelChange)="updateSettings()" [(ngModel)]="settings.default_sort" class="form-select">
-            <option *ngFor="let sort of sortTypes" [ngValue]="sort">{{ _getSortTypeText(sort) }}</option>
+            @for (sort of sortTypes; track sort) {
+              <option [ngValue]="sort">{{ _getSortTypeText(sort) }}</option>
+            }
           </select>
         </div>
         <div class="opt">
@@ -44,130 +48,138 @@
           <div class="tx"><b>Refresh sources on start</b><span>Fetch the latest channels each time LubaTV opens</span></div>
           <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.refresh_on_start"
             (ngModelChange)="updateSettings()" />
-        </div>
-        <div class="opt">
-          <div class="tx"><b>Tray icon</b><span>Turning it off also turns off TV guide notifications</span></div>
-          <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.enable_tray_icon"
-            (ngModelChange)="updateSettings()" />
-        </div>
-      </section>
-
-      <section class="group" id="playback">
-        <h2>Playback</h2>
-        <div class="opt">
-          <div class="tx"><b>Stream caching</b><span>Smoother on slow connections; turn off for lower latency</span></div>
-          <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.use_stream_caching"
-            (ngModelChange)="updateSettings()" />
-        </div>
-        <div class="opt">
-          <div class="tx"><b>Hardware decoding</b><span>Decode video on the GPU (adds <code>--hwdec=auto</code>)</span></div>
-          <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.enable_hwdec"
-            (ngModelChange)="updateSettings()" />
-        </div>
-        <div class="opt">
-          <div class="tx"><b>High-quality GPU rendering</b><span>HDR and better scaling (adds
-              <code>--vo=gpu-next --profile=high-quality</code>)</span></div>
-          <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.enable_gpu"
-            (ngModelChange)="updateSettings()" />
-        </div>
-        <div class="opt">
-          <div class="tx"><b>Volume on start</b><span>Applies to every new stream</span></div>
-          <input type="range" class="form-range volume" step="1" min="0" max="100" [(ngModel)]="settings.volume"
-            (ngModelChange)="updateSettings()" />
-          <span class="val">{{ settings.volume }}</span>
-        </div>
-        <div class="opt column">
-          <div class="tx"><b>Extra mpv options</b><span>Added to every stream. Leave empty unless you know you need
-              it.</span></div>
-          <textarea #mpvParams id="mpvParams" [(ngModel)]="settings.mpv_params" placeholder="For example: --hwdec=auto"
-            class="form-control mono"></textarea>
-        </div>
-      </section>
-
-      <section class="group" id="recording">
-        <h2>Recording &amp; downloads</h2>
-        <div class="opt">
-          <div class="tx">
-            <b>Save to</b>
-            <span class="selectable mono">{{ settings.recording_path || "Videos/LubaTV (default)" }}</span>
           </div>
-          <button type="button" (click)="selectFolder()" class="btn btn-secondary btn-sm">
-            <app-icon name="folder" />Change
-          </button>
-        </div>
-        <div class="opt">
-          <div class="tx"><b>Always ask where to save</b><span>Show a save dialog for every recording and
-              download</span></div>
-          <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.always_ask_save"
-            (ngModelChange)="updateSettings()" />
-        </div>
-      </section>
+          <div class="opt">
+            <div class="tx"><b>Tray icon</b><span>Turning it off also turns off TV guide notifications</span></div>
+            <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.enable_tray_icon"
+              (ngModelChange)="updateSettings()" />
+            </div>
+          </section>
 
-      <section class="group" id="restream">
-        <h2>Re-stream</h2>
-        <div class="opt">
-          <div class="tx"><b>Port</b><span>Where other devices connect to watch a re-streamed channel</span></div>
-          <input class="form-control port" type="number" [(ngModel)]="settings.restream_port" />
-        </div>
-      </section>
+          <section class="group" id="playback">
+            <h2>Playback</h2>
+            <div class="opt">
+              <div class="tx"><b>Stream caching</b><span>Smoother on slow connections; turn off for lower latency</span></div>
+              <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.use_stream_caching"
+                (ngModelChange)="updateSettings()" />
+              </div>
+              <div class="opt">
+                <div class="tx"><b>Hardware decoding</b><span>Decode video on the GPU (adds <code>--hwdec=auto</code>)</span></div>
+                <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.enable_hwdec"
+                  (ngModelChange)="updateSettings()" />
+                </div>
+                <div class="opt">
+                  <div class="tx"><b>High-quality GPU rendering</b><span>HDR and better scaling (adds
+                  <code>--vo=gpu-next --profile=high-quality</code>)</span></div>
+                  <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.enable_gpu"
+                    (ngModelChange)="updateSettings()" />
+                  </div>
+                  <div class="opt">
+                    <div class="tx"><b>Volume on start</b><span>Applies to every new stream</span></div>
+                    <input type="range" class="form-range volume" step="1" min="0" max="100" [(ngModel)]="settings.volume"
+                      (ngModelChange)="updateSettings()" />
+                      <span class="val">{{ settings.volume }}</span>
+                    </div>
+                    <div class="opt column">
+                      <div class="tx"><b>Extra mpv options</b><span>Added to every stream. Leave empty unless you know you need
+                    it.</span></div>
+                    <textarea #mpvParams id="mpvParams" [(ngModel)]="settings.mpv_params" placeholder="For example: --hwdec=auto"
+                    class="form-control mono"></textarea>
+                  </div>
+                </section>
 
-      <section class="group" id="sources">
-        <div class="group-head">
-          <h2>Sources</h2>
-          <div class="group-actions">
-            <button type="button" [disabled]="memory.Loading" (click)="refreshAll()" class="btn btn-secondary btn-sm">
-              <app-icon name="refresh" />Refresh all
-            </button>
-            <button type="button" [disabled]="memory.Loading" (click)="addSource()" class="btn btn-primary btn-sm">
-              <app-icon name="plus" />Add source
-            </button>
+                <section class="group" id="recording">
+                  <h2>Recording &amp; downloads</h2>
+                  <div class="opt">
+                    <div class="tx">
+                      <b>Save to</b>
+                      <span class="selectable mono">{{ settings.recording_path || "Videos/LubaTV (default)" }}</span>
+                    </div>
+                    <button type="button" (click)="selectFolder()" class="btn btn-secondary btn-sm">
+                      <app-icon name="folder" />Change
+                    </button>
+                  </div>
+                  <div class="opt">
+                    <div class="tx"><b>Always ask where to save</b><span>Show a save dialog for every recording and
+                  download</span></div>
+                  <input type="checkbox" class="lt-toggle" [(ngModel)]="settings.always_ask_save"
+                    (ngModelChange)="updateSettings()" />
+                  </div>
+                </section>
+
+                <section class="group" id="restream">
+                  <h2>Re-stream</h2>
+                  <div class="opt">
+                    <div class="tx"><b>Port</b><span>Where other devices connect to watch a re-streamed channel</span></div>
+                    <input class="form-control port" type="number" [(ngModel)]="settings.restream_port" />
+                  </div>
+                </section>
+
+                <section class="group" id="sources">
+                  <div class="group-head">
+                    <h2>Sources</h2>
+                    <div class="group-actions">
+                      <button type="button" [disabled]="memory.Loading" (click)="refreshAll()" class="btn btn-secondary btn-sm">
+                        <app-icon name="refresh" />Refresh all
+                      </button>
+                      <button type="button" [disabled]="memory.Loading" (click)="addSource()" class="btn btn-primary btn-sm">
+                        <app-icon name="plus" />Add source
+                      </button>
+                    </div>
+                  </div>
+                  <div class="sources">
+                    @for (source of sources; track source) {
+                      <app-source-tile [source]="source"
+                      [expiry]="source.source_type == 2 ? expiries[source.id!] : undefined"></app-source-tile>
+                    }
+                  </div>
+                </section>
+
+                <section class="group" id="data">
+                  <h2>Data</h2>
+                  <div class="opt">
+                    <div class="tx"><b>Clear history</b><span>Empties History and Continue watching</span></div>
+                    <button type="button" [disabled]="memory.Loading" (click)="clearHistory()" class="btn btn-secondary btn-sm">
+                      <app-icon name="history" />Clear
+                    </button>
+                  </div>
+                  <div class="opt">
+                    <div class="tx"><b>Delete everything</b><span>Removes all sources, favorites and settings. Use it if an
+                  update left LubaTV in a bad state.</span></div>
+                  <button type="button" [disabled]="memory.Loading" (click)="nuke()" class="btn btn-danger btn-sm">
+                    <app-icon name="bomb" />Delete
+                  </button>
+                </div>
+              </section>
+
+              <section class="group about" id="about">
+                <h2>About</h2>
+                <div class="opt">
+                  <div class="tx">
+                    <b>LubaTV @if (appVersion) {
+                      v{{ appVersion }}
+                    }</b>
+                    <span>{{ updateStatus() }}</span>
+                  </div>
+                  @if (updates.state === 'available') {
+                    <button type="button" class="btn btn-primary btn-sm"
+                      (click)="updates.install()">
+                      <app-icon name="download" />Update to {{ updates.version }}
+                    </button>
+                  }
+                  @if (updates.state !== 'available') {
+                    <button type="button" class="btn btn-secondary btn-sm"
+                      [disabled]="updates.busy || !updates.supported" (click)="updates.check()">
+                      <app-icon name="refresh" />{{ updates.state === "checking" ? "Checking…" : "Check for updates" }}
+                    </button>
+                  }
+                </div>
+                <p class="credit">
+                  Made by <a href="https://github.com/LuisBadal0/LubaTV" target="_blank">Luís Badalo</a>,
+                  forked from the original app by
+                  <a href="https://github.com/Fredolx" target="_blank">Frédéric Lachapelle</a>
+                </p>
+              </section>
+            </div>
           </div>
-        </div>
-        <div class="sources">
-          <app-source-tile *ngFor="let source of sources" [source]="source"
-            [expiry]="source.source_type == 2 ? expiries[source.id!] : undefined"></app-source-tile>
-        </div>
-      </section>
-
-      <section class="group" id="data">
-        <h2>Data</h2>
-        <div class="opt">
-          <div class="tx"><b>Clear history</b><span>Empties History and Continue watching</span></div>
-          <button type="button" [disabled]="memory.Loading" (click)="clearHistory()" class="btn btn-secondary btn-sm">
-            <app-icon name="history" />Clear
-          </button>
-        </div>
-        <div class="opt">
-          <div class="tx"><b>Delete everything</b><span>Removes all sources, favorites and settings. Use it if an
-              update left LubaTV in a bad state.</span></div>
-          <button type="button" [disabled]="memory.Loading" (click)="nuke()" class="btn btn-danger btn-sm">
-            <app-icon name="bomb" />Delete
-          </button>
-        </div>
-      </section>
-
-      <section class="group about" id="about">
-        <h2>About</h2>
-        <div class="opt">
-          <div class="tx">
-            <b>LubaTV <ng-container *ngIf="appVersion">v{{ appVersion }}</ng-container></b>
-            <span>{{ updateStatus() }}</span>
-          </div>
-          <button *ngIf="updates.state === 'available'" type="button" class="btn btn-primary btn-sm"
-            (click)="updates.install()">
-            <app-icon name="download" />Update to {{ updates.version }}
-          </button>
-          <button *ngIf="updates.state !== 'available'" type="button" class="btn btn-secondary btn-sm"
-            [disabled]="updates.busy || !updates.supported" (click)="updates.check()">
-            <app-icon name="refresh" />{{ updates.state === "checking" ? "Checking…" : "Check for updates" }}
-          </button>
-        </div>
-        <p class="credit">
-          Made by <a href="https://github.com/LuisBadal0/LubaTV" target="_blank">Luís Badalo</a>,
-          forked from the original app by
-          <a href="https://github.com/Fredolx" target="_blank">Frédéric Lachapelle</a>
-        </p>
-      </section>
-    </div>
-  </div>
-</main>
+        </main>

@@ -21,10 +21,11 @@ export function sourceColor(id?: number): string {
 }
 
 @Component({
-  selector: "app-sidebar",
-  templateUrl: "./sidebar.component.html",
-  styleUrl: "./sidebar.component.css",
-  changeDetection: ChangeDetectionStrategy.Default,
+    selector: "app-sidebar",
+    templateUrl: "./sidebar.component.html",
+    styleUrl: "./sidebar.component.css",
+    changeDetection: ChangeDetectionStrategy.Default,
+    standalone: false
 })
 export class SidebarComponent {
   /** The highlighted entry: a view on the home screen, or "settings". */

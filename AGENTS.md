@@ -8,7 +8,7 @@ This file adds what is specific to this repository.
 
 ## Set up
 
-- Node.js 20 or newer, Rust 1.91 or newer (stable), and the Tauri prerequisites for the platform.
+- Node.js 22.12 or newer, Rust 1.91 or newer (stable), and the Tauri prerequisites for the platform.
 - `npm ci`. Use npm only: `package-lock.json` is the one lockfile.
 - Windows development builds need the player files: `./scripts/fetch-windows-deps.ps1`
   fills the git-ignored `src-tauri/deps`.

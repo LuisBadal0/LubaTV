@@ -5,9 +5,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { MemoryService } from "../memory.service";
 
 @Component({
-  selector: "app-epg-modal",
-  templateUrl: "./epg-modal.component.html",
-  styleUrl: "./epg-modal.component.css",
+    selector: "app-epg-modal",
+    templateUrl: "./epg-modal.component.html",
+    styleUrl: "./epg-modal.component.css",
+    standalone: false
 })
 export class EpgModalComponent implements OnInit {
   name?: string;

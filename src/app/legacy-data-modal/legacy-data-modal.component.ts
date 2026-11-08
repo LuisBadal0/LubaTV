@@ -6,9 +6,10 @@ import { LegacyData } from "../models/legacyData";
 
 /** Asked once after the first start: keep or delete the folders of the app LubaTV was forked from. */
 @Component({
-  selector: "app-legacy-data-modal",
-  templateUrl: "./legacy-data-modal.component.html",
-  styleUrl: "./legacy-data-modal.component.css",
+    selector: "app-legacy-data-modal",
+    templateUrl: "./legacy-data-modal.component.html",
+    styleUrl: "./legacy-data-modal.component.css",
+    standalone: false
 })
 export class LegacyDataModalComponent {
   legacy?: LegacyData;

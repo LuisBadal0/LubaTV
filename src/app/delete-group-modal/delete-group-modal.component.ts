@@ -9,9 +9,10 @@ import { ErrorService } from '../error.service';
 import { MemoryService } from '../memory.service';
 
 @Component({
-  selector: 'app-delete-group-modal',
-  templateUrl: './delete-group-modal.component.html',
-  styleUrl: './delete-group-modal.component.css'
+    selector: 'app-delete-group-modal',
+    templateUrl: './delete-group-modal.component.html',
+    styleUrl: './delete-group-modal.component.css',
+    standalone: false
 })
 export class DeleteGroupModalComponent {
   loading: boolean = false;

@@ -6,9 +6,10 @@ import { invoke } from '@tauri-apps/api/core';
 import { MemoryService } from '../memory.service';
 
 @Component({
-  selector: 'app-edit-group-modal',
-  templateUrl: './edit-group-modal.component.html',
-  styleUrl: './edit-group-modal.component.css'
+    selector: 'app-edit-group-modal',
+    templateUrl: './edit-group-modal.component.html',
+    styleUrl: './edit-group-modal.component.css',
+    standalone: false
 })
 export class EditGroupModalComponent {
   editing: boolean = false;

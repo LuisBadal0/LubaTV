@@ -5,55 +5,82 @@
   (contextmenu)="onRightClick($event)">
 
   <!-- Continue watching -->
-  <div *ngIf="variant === 'wide'" class="wide-body" [attr.style]="tintStyle">
-    <span class="logo sm">
-      <img *ngIf="channel?.image && showImage" (error)="showImage = false" loading="lazy" decoding="async"
-        [src]="channel?.image" alt="" />
-      <span *ngIf="!channel?.image || !showImage" class="initials">{{ initials }}</span>
-    </span>
-    <span class="wide-text">
-      <span class="nm">{{ displayName }}</span>
-      <span class="sub">{{ starting ? "Starting…" : wideSubtitle() }}</span>
-    </span>
-    <span class="play-btn"><app-icon name="play" /></span>
-  </div>
+  @if (variant === 'wide') {
+    <div class="wide-body" [attr.style]="tintStyle">
+      <span class="logo sm">
+        @if (channel?.image && showImage) {
+          <img (error)="showImage = false" loading="lazy" decoding="async"
+            [src]="channel?.image" alt="" />
+        }
+        @if (!channel?.image || !showImage) {
+          <span class="initials">{{ initials }}</span>
+        }
+      </span>
+      <span class="wide-text">
+        <span class="nm">{{ displayName }}</span>
+        <span class="sub">{{ starting ? "Starting…" : wideSubtitle() }}</span>
+      </span>
+      <span class="play-btn"><app-icon name="play" /></span>
+    </div>
+  }
 
   <!-- Category -->
-  <div *ngIf="variant !== 'wide' && isGroup()" class="cat-body" [attr.style]="tintStyle">
-    <span class="tag" *ngIf="tag">{{ tag }}</span>
-    <h3>{{ displayName }}</h3>
-    <p>{{ countText() }}</p>
-    <div class="stack" *ngIf="previewImages().length; else catIcon">
-      <span class="mini" *ngFor="let image of previewImages()">
-        <img [src]="image" loading="lazy" decoding="async" alt="" (error)="hidePreview(image)" />
-      </span>
+  @if (variant !== 'wide' && isGroup()) {
+    <div class="cat-body" [attr.style]="tintStyle">
+      @if (tag) {
+        <span class="tag">{{ tag }}</span>
+      }
+      <h3>{{ displayName }}</h3>
+      <p>{{ countText() }}</p>
+      @if (previewImages().length) {
+        <div class="stack">
+          @for (image of previewImages(); track image) {
+            <span class="mini">
+              <img [src]="image" loading="lazy" decoding="async" alt="" (error)="hidePreview(image)" />
+            </span>
+          }
+        </div>
+      } @else {
+        <app-icon name="library" class="cat-icon" />
+      }
     </div>
-    <ng-template #catIcon><app-icon name="library" class="cat-icon" /></ng-template>
-  </div>
+  }
 
   <!-- Channel, movie, series, season -->
-  <ng-container *ngIf="variant !== 'wide' && !isGroup()">
+  @if (variant !== 'wide' && !isGroup()) {
     <div class="plate" [attr.style]="tintStyle">
       <span class="badge" [class.live]="isLivestream()">{{ badgeText() }}</span>
-      <span class="tag" *ngIf="tag">{{ tag }}</span>
-      <img *ngIf="channel?.image && showImage" class="logo-img" (error)="showImage = false" loading="lazy"
-        decoding="async" [src]="channel?.image" alt="" />
-      <span *ngIf="!channel?.image || !showImage" class="logo"><span class="initials">{{ initials }}</span></span>
-      <span class="eq" *ngIf="starting"><span></span><span></span><span></span><span></span></span>
+      @if (tag) {
+        <span class="tag">{{ tag }}</span>
+      }
+      @if (channel?.image && showImage) {
+        <img class="logo-img" (error)="showImage = false" loading="lazy"
+          decoding="async" [src]="channel?.image" alt="" />
+      }
+      @if (!channel?.image || !showImage) {
+        <span class="logo"><span class="initials">{{ initials }}</span></span>
+      }
+      @if (starting) {
+        <span class="eq"><span></span><span></span><span></span><span></span></span>
+      }
     </div>
     <div class="meta">
       <div class="nm">{{ displayName }}</div>
       <div class="sub">
-        <app-icon *ngIf="channel?.favorite" name="star" class="fav" />
-        <app-icon *ngIf="channel?.tv_archive" name="archive" class="arch" />
+        @if (channel?.favorite) {
+          <app-icon name="star" class="fav" />
+        }
+        @if (channel?.tv_archive) {
+          <app-icon name="archive" class="arch" />
+        }
         <span class="sub-text">{{ starting ? "Starting…" : getSourceName() }}</span>
       </div>
     </div>
-  </ng-container>
+  }
 </div>
 
 <div style="visibility: hidden; position: fixed" [style.left.px]="menuTopLeftPosition.x"
-  [style.top.px]="menuTopLeftPosition.y" [matMenuTriggerFor]="rightMenu"></div>
+[style.top.px]="menuTopLeftPosition.y" [matMenuTriggerFor]="rightMenu"></div>
 
 <mat-menu #rightMenu="matMenu">
   <ng-template matMenuContent let-item="item">
@@ -81,7 +108,7 @@
     <button [hidden]="!isCustom()" mat-menu-item (click)="share()"><app-icon name="share" />Share</button>
     <button mat-menu-item
       [hidden]="channel?.media_type == mediaTypeEnum.group || channel?.media_type == mediaTypeEnum.season"
-      (click)="copyURL()"><app-icon name="copy" />Copy URL</button>
+    (click)="copyURL()"><app-icon name="copy" />Copy URL</button>
     <button [hidden]="isCustom() || viewMode == viewModeEnum.History" mat-menu-item (click)="hide()">
       <app-icon [name]="alreadyHidden ? 'eye' : 'eyeOff'" />{{ alreadyHidden ? "Unhide" : "Hide" }}
     </button>

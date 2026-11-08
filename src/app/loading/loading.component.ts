@@ -1,9 +1,10 @@
 import { Component, Input, OnDestroy, OnInit } from "@angular/core";
 
 @Component({
-  selector: "app-loading",
-  templateUrl: "./loading.component.html",
-  styleUrl: "./loading.component.css",
+    selector: "app-loading",
+    templateUrl: "./loading.component.html",
+    styleUrl: "./loading.component.css",
+    standalone: false
 })
 export class LoadingComponent implements OnInit, OnDestroy {
   @Input()

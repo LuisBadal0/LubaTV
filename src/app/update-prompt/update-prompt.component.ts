@@ -7,9 +7,10 @@ import { PlayerFilesService } from "../player-files.service";
  * progress while the player files update (which comes first).
  */
 @Component({
-  selector: "app-update-prompt",
-  templateUrl: "./update-prompt.component.html",
-  styleUrl: "./update-prompt.component.css",
+    selector: "app-update-prompt",
+    templateUrl: "./update-prompt.component.html",
+    styleUrl: "./update-prompt.component.css",
+    standalone: false
 })
 export class UpdatePromptComponent {
   constructor(

@@ -13,9 +13,10 @@ export interface PlaybackError {
 const MPV_OUTPUT = "\n\nmpv output:\n";
 
 @Component({
-  selector: 'app-error-modal',
-  templateUrl: './error-modal.component.html',
-  styleUrl: './error-modal.component.css'
+    selector: 'app-error-modal',
+    templateUrl: './error-modal.component.html',
+    styleUrl: './error-modal.component.css',
+    standalone: false
 })
 export class ErrorModalComponent {
   error?: string;

@@ -1,6 +1,8 @@
 <div id="page-scroll" class="page-scroll">
   <router-outlet></router-outlet>
 </div>
-<app-download-manager *ngIf="showDownloadManager()"></app-download-manager>
+@if (showDownloadManager()) {
+  <app-download-manager></app-download-manager>
+}
 <app-update-prompt></app-update-prompt>
 <app-window-controls class="window-controls" />

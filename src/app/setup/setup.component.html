@@ -1,8 +1,12 @@
 <div class="setup">
   <aside class="hero" data-tauri-drag-region>
     <img src="assets/brand/lubatv-icon.svg" alt="" class="hero-icon" />
-    <h1 *ngIf="!memory.AddingAdditionalSource">Your TV,<br />all in one place.</h1>
-    <h1 *ngIf="memory.AddingAdditionalSource">Add another<br />source.</h1>
+    @if (!memory.AddingAdditionalSource) {
+      <h1>Your TV,<br />all in one place.</h1>
+    }
+    @if (memory.AddingAdditionalSource) {
+      <h1>Add another<br />source.</h1>
+    }
     <p>Bring your playlists and Xtream accounts. LubaTV keeps them fast, searchable and easy to browse.</p>
     <ul>
       <li><app-icon name="check" />Live TV, movies and series</li>
@@ -12,26 +16,28 @@
   </aside>
 
   <main class="form-side">
-    <button type="button" *ngIf="memory.AddingAdditionalSource" (click)="goBack()" class="lt-icon-btn back"
-      title="Back">
-      <app-icon name="back" />
-    </button>
+    @if (memory.AddingAdditionalSource) {
+      <button type="button" (click)="goBack()" class="lt-icon-btn back"
+        title="Back">
+        <app-icon name="back" />
+      </button>
+    }
 
-    <ng-container *ngIf="!loading">
+    @if (!loading) {
       <h2>{{ memory.AddingAdditionalSource ? "Add a source" : "Add your first source" }}</h2>
       <p class="hint">{{ memory.AddingAdditionalSource ? "It appears alongside your other sources." : "You can add more
-        later in Settings." }}</p>
-
+      later in Settings." }}</p>
       <div class="types" role="radiogroup" aria-label="Source type">
-        <button *ngFor="let type of sourceTypes" type="button" class="type" role="radio"
-          [class.on]="source.source_type == type.type" [attr.aria-checked]="source.source_type == type.type"
-          (click)="switchMode(type.type)">
-          <app-icon [name]="type.icon" />
-          <b>{{ type.label }}</b>
-          <span>{{ type.hint }}</span>
-        </button>
+        @for (type of sourceTypes; track type) {
+          <button type="button" class="type" role="radio"
+            [class.on]="source.source_type == type.type" [attr.aria-checked]="source.source_type == type.type"
+            (click)="switchMode(type.type)">
+            <app-icon [name]="type.icon" />
+            <b>{{ type.label }}</b>
+            <span>{{ type.hint }}</span>
+          </button>
+        }
       </div>
-
       <form name="setupForm" class="fields" #form="ngForm" (ngSubmit)="submit()">
         <div class="field full">
           <label for="source-name">Name</label>
@@ -39,64 +45,81 @@
             [emptyDisabled]="source.source_type == sourceTypeEnum.CustomImport" source-name-exists name="name" empty
             class="form-control" [(ngModel)]="source.name"
             [placeholder]="source.source_type == sourceTypeEnum.CustomImport ? 'Uses the name in the file' : 'My provider'" />
-          <div *ngIf="name.errors?.['sourceNameExists']" class="error">This name is already taken</div>
-        </div>
-
-        <div class="field full"
-          *ngIf="source.source_type != sourceTypeEnum.M3U && source.source_type != sourceTypeEnum.Custom && source.source_type != sourceTypeEnum.CustomImport">
-          <label for="source-url">{{ source.source_type == sourceTypeEnum.Xtream ? "Server URL" : "Playlist URL"
-            }}</label>
-          <input id="source-url" autocomplete="off" name="url" empty class="form-control" [(ngModel)]="source.url"
-            [placeholder]="source.source_type == sourceTypeEnum.Xtream ? 'https://iptv.example.com:8080' : 'https://example.com/playlist.m3u'" />
-        </div>
-
-        <ng-container *ngIf="source.source_type == sourceTypeEnum.Xtream">
-          <div class="field">
-            <label for="source-username">Username</label>
-            <input id="source-username" autocomplete="off" name="username" empty class="form-control"
-              [(ngModel)]="source.username" />
+            @if (name.errors?.['sourceNameExists']) {
+              <div class="error">This name is already taken</div>
+            }
           </div>
-          <div class="field">
-            <label for="source-password">Password</label>
-            <input id="source-password" type="password" autocomplete="off" name="password" empty
-              class="form-control" [(ngModel)]="source.password" />
+          @if (source.source_type != sourceTypeEnum.M3U && source.source_type != sourceTypeEnum.Custom && source.source_type != sourceTypeEnum.CustomImport) {
+            <div class="field full"
+              >
+              <label for="source-url">{{ source.source_type == sourceTypeEnum.Xtream ? "Server URL" : "Playlist URL"
+              }}</label>
+              <input id="source-url" autocomplete="off" name="url" empty class="form-control" [(ngModel)]="source.url"
+                [placeholder]="source.source_type == sourceTypeEnum.Xtream ? 'https://iptv.example.com:8080' : 'https://example.com/playlist.m3u'" />
+              </div>
+            }
+            @if (source.source_type == sourceTypeEnum.Xtream) {
+              <div class="field">
+                <label for="source-username">Username</label>
+                <input id="source-username" autocomplete="off" name="username" empty class="form-control"
+                  [(ngModel)]="source.username" />
+                </div>
+                <div class="field">
+                  <label for="source-password">Password</label>
+                  <input id="source-password" type="password" autocomplete="off" name="password" empty
+                    class="form-control" [(ngModel)]="source.password" />
+                  </div>
+                }
+                @if (source.source_type == sourceTypeEnum.M3ULink || source.source_type == sourceTypeEnum.Xtream) {
+                  <div class="field full"
+                    >
+                    <label for="source-ua">User agent <small>optional</small></label>
+                    <input id="source-ua" autocomplete="off" name="user-agent" class="form-control"
+                      [(ngModel)]="source.user_agent" placeholder="LubaTV" />
+                    </div>
+                  }
+                  @if (source.source_type == sourceTypeEnum.M3U || source.source_type == sourceTypeEnum.M3ULink) {
+                    <label class="toggle-row full"
+                      >
+                      <input name="use-tvg-id" [(ngModel)]="source.use_tvg_id" class="lt-toggle" type="checkbox" />
+                      Use the TVG-ID as the name when TVG-NAME is missing
+                    </label>
+                  }
+                  <div class="actions full">
+                    <button [disabled]="!form.valid" class="btn btn-primary">
+                      @switch (source.source_type) {
+                        @case (sourceTypeEnum.M3U) {
+                          <app-icon name="file" />Choose file
+                        }
+                        @case (sourceTypeEnum.M3ULink) {
+                          <app-icon name="download" />Fetch
+                          playlist
+                        }
+                        @case (sourceTypeEnum.Xtream) {
+                          <app-icon name="key" />Connect
+                        }
+                        @case (sourceTypeEnum.Custom) {
+                          <app-icon name="plus" />Create source
+                        }
+                        @case (sourceTypeEnum.CustomImport) {
+                          <app-icon name="fileImport" />Choose
+                          file
+                        }
+                      }
+                    </button>
+                    <small>Your details stay on this device</small>
+                  </div>
+                </form>
+              }
+              @if (loading) {
+                <app-loading [center]="false"></app-loading>
+              }
+            </main>
           </div>
-        </ng-container>
 
-        <div class="field full"
-          *ngIf="source.source_type == sourceTypeEnum.M3ULink || source.source_type == sourceTypeEnum.Xtream">
-          <label for="source-ua">User agent <small>optional</small></label>
-          <input id="source-ua" autocomplete="off" name="user-agent" class="form-control"
-            [(ngModel)]="source.user_agent" placeholder="LubaTV" />
-        </div>
-
-        <label class="toggle-row full"
-          *ngIf="source.source_type == sourceTypeEnum.M3U || source.source_type == sourceTypeEnum.M3ULink">
-          <input name="use-tvg-id" [(ngModel)]="source.use_tvg_id" class="lt-toggle" type="checkbox" />
-          Use the TVG-ID as the name when TVG-NAME is missing
-        </label>
-
-        <div class="actions full">
-          <button [disabled]="!form.valid" class="btn btn-primary">
-            <ng-container [ngSwitch]="source.source_type">
-              <ng-container *ngSwitchCase="sourceTypeEnum.M3U"><app-icon name="file" />Choose file</ng-container>
-              <ng-container *ngSwitchCase="sourceTypeEnum.M3ULink"><app-icon name="download" />Fetch
-                playlist</ng-container>
-              <ng-container *ngSwitchCase="sourceTypeEnum.Xtream"><app-icon name="key" />Connect</ng-container>
-              <ng-container *ngSwitchCase="sourceTypeEnum.Custom"><app-icon name="plus" />Create source</ng-container>
-              <ng-container *ngSwitchCase="sourceTypeEnum.CustomImport"><app-icon name="fileImport" />Choose
-                file</ng-container>
-            </ng-container>
-          </button>
-          <small>Your details stay on this device</small>
-        </div>
-      </form>
-    </ng-container>
-    <app-loading *ngIf="loading" [center]="false"></app-loading>
-  </main>
-</div>
-
-<button type="button" (click)="nuke()" class="btn btn-danger nuke-btn" *ngIf="!memory.AddingAdditionalSource"
-  title="Delete everything">
-  <app-icon name="bomb" />
-</button>
+          @if (!memory.AddingAdditionalSource) {
+            <button type="button" (click)="nuke()" class="btn btn-danger nuke-btn"
+              title="Delete everything">
+              <app-icon name="bomb" />
+            </button>
+          }
