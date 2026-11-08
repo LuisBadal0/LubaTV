@@ -131,6 +131,10 @@ pub fn run() {
             app.manage(Mutex::new(AppState {
                 ..Default::default()
             }));
+            // Built from the app version so the title can't fall behind a version bump.
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_title(&format!("LubaTV (v{})", app.package_info().version));
+            }
             #[cfg(any(target_os = "macos", target_os = "windows"))]
             if *ENABLE_TRAY_ICON {
                 let _ = build_tray_icon(app);
