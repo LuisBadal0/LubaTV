@@ -24,7 +24,6 @@ use rusqlite::Transaction;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::str::FromStr;
 use tokio::join;
 use url::Url;
 
@@ -114,11 +113,7 @@ struct XtreamEPGItem {
 
 fn build_xtream_url(source: &mut Source) -> Result<Url> {
     let mut url = Url::parse(&source.url.clone().context("Missing URL")?)?;
-    source.url_origin = Some(
-        Url::from_str(&source.url.clone().unwrap())?
-            .origin()
-            .ascii_serialization(),
-    );
+    source.url_origin = Some(url.origin().ascii_serialization());
     url.query_pairs_mut()
         .append_pair(
             "username",
@@ -220,18 +215,14 @@ fn process_xtream(
             category_id.map(|cid| (cid, f.category_name))
         })
         .collect();
+    let source_id = source.id.context("Source has no id")?;
     let mut groups: HashMap<String, i64> = HashMap::new();
     for live in streams {
         let category_name = get_cat_name(&cats, get_serde_json_string(&live.category_id));
         convert_xtream_live_to_channel(live, source, stream_type, category_name)
             .and_then(|mut channel| {
-                sql::set_channel_group_id(
-                    &mut groups,
-                    &mut channel,
-                    tx,
-                    source.id.as_ref().unwrap(),
-                )
-                .unwrap_or_else(|e| log::log(format!("{:?}", e)));
+                sql::set_channel_group_id(&mut groups, &mut channel, tx, &source_id)
+                    .unwrap_or_else(|e| log::log(format!("{:?}", e)));
                 sql::insert_channel(tx, channel)?;
                 Ok(())
             })
@@ -241,8 +232,7 @@ fn process_xtream(
 }
 
 fn get_cat_name(cats: &HashMap<String, String>, category_id: Option<String>) -> Option<String> {
-    category_id.as_ref()?;
-    cats.get(&category_id.unwrap()).map(|t| t.to_string())
+    cats.get(&category_id?).map(|t| t.to_string())
 }
 
 fn convert_xtream_live_to_channel(
@@ -291,10 +281,10 @@ fn get_url(
 ) -> Result<String> {
     Ok(format!(
         "{}/{}/{}/{}/{}.{}",
-        source.url_origin.clone().unwrap(),
+        source.url_origin.as_deref().context("Missing URL")?,
         get_media_type_string(stream_type)?,
-        source.username.clone().unwrap(),
-        source.password.clone().unwrap(),
+        source.username.as_deref().context("Missing username")?,
+        source.password.as_deref().context("Missing password")?,
         stream_id,
         extension.unwrap_or(LIVE_STREAM_EXTENSION.to_string())
     ))
@@ -387,6 +377,7 @@ fn insert_episode(
     series_id: u64,
     default_season_image: Option<String>,
 ) -> Result<()> {
+    let source_id = source.id.context("Source has no id")?;
     let season_number = get_serde_json_i64(&episode.season).unwrap_or(NO_SEASON_NUMBER);
     let season_id = seasons_db.get(&season_number);
     let season_id: i64 = match season_id {
@@ -395,7 +386,7 @@ fn insert_episode(
             let season = seasons
                 .get(&season_number)
                 .and_then(|f| {
-                    xtream_season_to_season(f.clone(), source.id.unwrap(), series_id)
+                    xtream_season_to_season(f.clone(), source_id, series_id)
                         .with_context(|| "Failed to convert XtreamSeason to Season")
                         .inspect_err(|e| log::log(format!("{}", e)))
                         .ok()
@@ -404,7 +395,7 @@ fn insert_episode(
                     create_makeshift_season(
                         season_number,
                         series_id,
-                        source.id.unwrap(),
+                        source_id,
                         default_season_image,
                     )
                 });

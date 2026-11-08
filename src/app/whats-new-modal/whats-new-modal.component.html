@@ -2,6 +2,11 @@
   <h4 class="modal-title lbl">What's new in LubaTV v{{ memory.AppVersion }}</h4>
 </div>
 <div class="modal-body">
+  <h3>Better names for downloads and recordings</h3>
+  <ul>
+    <li>Files from addresses without an extension, such as <code>http://provider.com/live/123</code>, are saved as <code>.mp4</code> instead of getting a broken name</li>
+    <li>Addresses with something after the file name, such as <code>42.mkv?token=…</code>, keep their real extension</li>
+  </ul>
   <h3>Much smaller updates</h3>
   <ul>
     <li>Updates now download about 10 MB instead of about 100 MB: they no longer include mpv, ffmpeg and yt-dlp</li>

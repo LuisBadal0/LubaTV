@@ -30,7 +30,10 @@ pub fn get_conn() -> Result<PooledConnection<SqliteConnectionManager>> {
 fn create_connection_pool() -> Pool<SqliteConnectionManager> {
     let manager = SqliteConnectionManager::file(get_and_create_sqlite_db_path())
         .with_init(configure_connection);
-    r2d2::Pool::builder().max_size(20).build(manager).unwrap()
+    r2d2::Pool::builder()
+        .max_size(20)
+        .build(manager)
+        .expect("Couldn't open LubaTV's database")
 }
 
 /// WAL lets searches keep reading the last committed data while a source refresh
@@ -49,9 +52,13 @@ fn page_offset(page: u32) -> u32 {
 }
 
 fn get_and_create_sqlite_db_path() -> String {
-    let mut path = crate::utils::project_dirs().unwrap().data_dir().to_owned();
+    // LubaTV can't run without its database, so failing here stops it with a clear message.
+    let mut path = crate::utils::project_dirs()
+        .expect("Couldn't find the folder for LubaTV's data")
+        .data_dir()
+        .to_owned();
     if !path.exists() {
-        std::fs::create_dir_all(&path).unwrap();
+        std::fs::create_dir_all(&path).expect("Couldn't create the folder for LubaTV's data");
     }
     path.push(DB_NAME);
     path.to_string_lossy().to_string()
@@ -389,24 +396,18 @@ pub fn set_channel_group_id(
     tx: &Transaction,
     source_id: &i64,
 ) -> Result<()> {
-    if channel.group.is_none() {
+    let Some(group) = channel.group.as_ref() else {
         return Ok(());
-    }
-    if !groups.contains_key(channel.group.as_ref().unwrap()) {
-        let id = get_or_insert_group(
-            tx,
-            channel.group.as_ref().unwrap(),
-            &channel.image,
-            source_id,
-            channel.media_type,
-        )?;
-        groups.insert(channel.group.clone().unwrap(), id);
-        channel.group_id = Some(id);
-    } else {
-        channel.group_id = groups
-            .get(channel.group.as_ref().unwrap())
-            .map(|x| x.to_owned());
-    }
+    };
+    let id = match groups.get(group) {
+        Some(id) => *id,
+        None => {
+            let id = get_or_insert_group(tx, group, &channel.image, source_id, channel.media_type)?;
+            groups.insert(group.clone(), id);
+            id
+        }
+    };
+    channel.group_id = Some(id);
     Ok(())
 }
 
@@ -481,7 +482,10 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     let offset = page_offset(filters.page);
     let media_types = match filters.series_id.is_some() {
         true => vec![1],
-        false => filters.media_types.clone().unwrap(),
+        false => filters
+            .media_types
+            .clone()
+            .context("No media types to search")?,
     };
     let query = filters.query.unwrap_or("".to_string());
     let keywords: Vec<String> = match filters.use_keywords {
@@ -834,7 +838,10 @@ fn search_hidden(filters: Filters) -> Result<Vec<Channel>> {
 
     let media_types = match filters.series_id.is_some() {
         true => vec![1],
-        false => filters.media_types.clone().unwrap(),
+        false => filters
+            .media_types
+            .clone()
+            .context("No media types to search")?,
     };
 
     let query = filters.query.unwrap_or("".to_string());
