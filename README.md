@@ -124,7 +124,13 @@ CI runs all of them on every pull request. Without Chrome, point `CHROME_BIN` at
 
 ### Releasing
 
-Every merge to `main` builds the Windows installers and Linux packages. If the version is new, CI publishes them as GitHub release `v<version>` with notes listing the merged pull requests. To publish a release, bump the version in the same pull request, in all three of `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`. CI fails if they differ. A merge that keeps an already-released version builds but publishes nothing.
+Every merge to `main` builds the Windows installers and Linux packages. Releases are batched:
+- Pull requests note what users will notice under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) and keep the version.
+- A separate release pull request bumps the version and dates that section.
+- When it merges, CI publishes GitHub release `v<version>`. Its notes are the changelog section, install instructions and the list of merged pull requests.
+- A merge that keeps an already-released version builds but publishes nothing.
+
+[CONTRIBUTING.md](CONTRIBUTING.md) has the steps.
 
 Releases also publish update installers (`-update.exe` and `-update.msi`), their signatures and `latest.json`, which the in-app updater uses. The update installers are the same app without the player files. CI signs them with the `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` secrets; the matching public key is in `src-tauri/tauri.conf.json`. Keep a backup of the private key: without it, installed copies can't verify future updates.
 
@@ -134,7 +140,7 @@ mpv (with its Vulkan loader), ffmpeg and yt-dlp are pinned in `src-tauri/player-
 
 - **Installers** ship them in a `deps` folder next to the app.
 - **Updates** don't. When LubaTV starts, it checks its copies against the pinned checksums and only gets the files that are missing or different: copied from `deps` when a copy there matches, otherwise downloaded into `%LOCALAPPDATA%\luisbadalo\lubatv\data\player` and checked before use. mpv, `vulkan-1.dll` and yt-dlp are always used from the same folder.
-- **New builds:** run the **Refresh player files** workflow (Actions tab) and pick yt-dlp, mpv, ffmpeg or all. It publishes the files that changed as a new `player-files-*` release and pushes a branch that updates `player-files.json`; open a pull request from it and bump the version to ship them.
+- **New builds:** run the **Refresh player files** workflow (Actions tab) and pick yt-dlp, mpv, ffmpeg or all. It publishes the files that changed as a new `player-files-*` release and pushes a branch that updates `player-files.json`; open a pull request from it and add a line under **Unreleased** in `CHANGELOG.md`. The next release ships them.
 
 Development builds use `src-tauri/deps`. Fill it once with:
 
