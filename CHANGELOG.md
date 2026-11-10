@@ -11,6 +11,8 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-10
+
 ### Added
 
 - When an update is available, **What's new** in the update prompt, and Settings → About, list what the new version changes.
