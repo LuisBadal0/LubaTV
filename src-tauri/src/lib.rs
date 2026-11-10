@@ -73,6 +73,8 @@ pub fn run() {
             get_episodes,
             favorite_channel,
             unfavorite_channel,
+            favorite_group,
+            get_favorite_groups,
             source_name_exists,
             get_sources,
             delete_source,
@@ -314,6 +316,16 @@ fn favorite_channel(channel_id: i64) -> Result<(), String> {
 #[tauri::command(async)]
 fn unfavorite_channel(channel_id: i64) -> Result<(), String> {
     sql::favorite_channel(channel_id, false).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn favorite_group(id: i64, favorite: bool) -> Result<(), String> {
+    sql::favorite_group(id, favorite).map_err(map_err_frontend)
+}
+
+#[tauri::command(async)]
+fn get_favorite_groups(source_ids: Vec<i64>) -> Result<Vec<Channel>, String> {
+    sql::get_favorite_groups(source_ids).map_err(map_err_frontend)
 }
 
 #[tauri::command(async)]

@@ -9,6 +9,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { SortType } from "./models/sortType";
 import { LAST_SEEN_VERSION } from "./models/localStorage";
 import { SetNodeDTO } from "./models/setNodeDTO";
+import { Channel } from "./models/channel";
 
 @Injectable({
   providedIn: "root",
@@ -46,6 +47,41 @@ export class MemoryService {
   public AlwaysAskSave?: boolean;
   /** A view chosen in the sidebar while on another page; Home opens it next. */
   public PendingView?: number;
+  /** A favorite category chosen in the sidebar while on another page; Home opens it next. */
+  public PendingCategory?: Channel;
+  /** Favorite categories, listed in the sidebar. */
+  public FavoriteGroups: BehaviorSubject<Channel[]> = new BehaviorSubject<Channel[]>([]);
+  /** A favorite category chosen in the sidebar while Home is open. */
+  public OpenCategory: Subject<Channel> = new Subject();
+
+  async loadFavoriteGroups() {
+    try {
+      const groups: Channel[] = await invoke("get_favorite_groups", {
+        sourceIds: Array.from(this.Sources.keys()),
+      });
+      this.FavoriteGroups.next(groups);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  isFavoriteGroup(id?: number): boolean {
+    return id != null && this.FavoriteGroups.value.some((group) => group.id == id);
+  }
+
+  /** Adds a category to the sidebar's favorites, or takes it out. */
+  async toggleFavoriteGroup(group: Channel) {
+    const favorite = !this.isFavoriteGroup(group.id);
+    try {
+      await invoke("favorite_group", { id: group.id, favorite });
+      await this.loadFavoriteGroups();
+      this.toastr.success(
+        favorite ? `Added "${group.name}" to the sidebar` : `Removed "${group.name}" from the sidebar`,
+      );
+    } catch (e) {
+      this.error.handleError(e, `Failed to update "${group.name}"`);
+    }
+  }
 
   async tryIPC<T>(
     successMessage: string,

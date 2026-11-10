@@ -1,12 +1,35 @@
-<div [attr.id]="idPrefix + id" tabindex="0" class="tile" [class.wide]="variant === 'wide'" [class.category]="isGroup()"
+<div [attr.id]="idPrefix + id" tabindex="0" class="tile" [class.wide]="variant === 'wide'"
+  [class.row]="variant === 'row'" [class.category]="isGroup()" [class.selected]="selected"
   [class.playing]="starting" [class.faded]="fade" [ngbTooltip]="tooltip" #tip="ngbTooltip" triggers="manual"
-  placement="top" container="body" (mouseenter)="hoverTip(tip)" (mouseleave)="hideTip(tip)"
-  (focus)="focusTip($event, tip)" (blur)="hideTip(tip)" (click)="click()" (keyup.enter)="click()"
+  placement="top" container="body" (mouseenter)="hoverTip(tip); pick()" (mouseleave)="hideTip(tip)"
+  (focus)="focusTip($event, tip); pick()" (blur)="hideTip(tip)" (click)="click()" (keyup.enter)="click()"
   (contextmenu)="onRightClick($event)">
 
   <!-- Continue watching -->
   @if (variant === 'wide') {
-    <div class="wide-body" [attr.style]="tintStyle">
+    <div class="wide-plate" [attr.style]="tintStyle">
+      @if (channel?.image && showImage) {
+        <img class="logo-img" (error)="showImage = false" loading="lazy" decoding="async"
+          [src]="channel?.image" alt="" />
+      }
+      @if (!channel?.image || !showImage) {
+        <span class="logo"><span class="initials">{{ initials }}</span></span>
+      }
+      @if (starting) {
+        <span class="eq"><span></span><span></span><span></span><span></span></span>
+      }
+      <span class="play-btn"><app-icon name="play" /></span>
+    </div>
+    <div class="meta">
+      <div class="nm one-line">{{ displayName }}</div>
+      <div class="sub"><span class="sub-text">{{ starting ? "Starting…" : wideSubtitle() }}</span></div>
+    </div>
+  }
+
+  <!-- Channel list row (inside a category) -->
+  @if (variant === 'row') {
+    <div class="row-body" [attr.style]="tintStyle">
+      <span class="num">{{ id + 1 }}</span>
       <span class="logo sm">
         @if (channel?.image && showImage) {
           <img (error)="showImage = false" loading="lazy" decoding="async"
@@ -16,16 +39,27 @@
           <span class="initials">{{ initials }}</span>
         }
       </span>
-      <span class="wide-text">
-        <span class="nm">{{ displayName }}</span>
-        <span class="sub">{{ starting ? "Starting…" : wideSubtitle() }}</span>
+      <span class="row-name">
+        <span class="nm one-line">{{ displayName }}</span>
+        @if (tag) {
+          <span class="row-tag">{{ tag }}</span>
+        }
       </span>
-      <span class="play-btn"><app-icon name="play" /></span>
+      <span class="row-sub">
+        @if (channel?.favorite) {
+          <app-icon name="star" class="fav" />
+        }
+        @if (channel?.tv_archive) {
+          <app-icon name="archive" class="arch" />
+        }
+        <span class="sub-text">{{ starting ? "Starting…" : typeLabel() }}</span>
+      </span>
+      <span class="play-btn sm"><app-icon name="play" /></span>
     </div>
   }
 
   <!-- Category -->
-  @if (variant !== 'wide' && isGroup()) {
+  @if (variant === 'card' && isGroup()) {
     <div class="cat-body" [attr.style]="tintStyle">
       @if (tag) {
         <span class="tag">{{ tag }}</span>
@@ -47,9 +81,11 @@
   }
 
   <!-- Channel, movie, series, season -->
-  @if (variant !== 'wide' && !isGroup()) {
+  @if (variant === 'card' && !isGroup()) {
     <div class="plate" [attr.style]="tintStyle">
-      <span class="badge" [class.live]="isLivestream()">{{ badgeText() }}</span>
+      @if (!isLivestream()) {
+        <span class="badge">{{ badgeText() }}</span>
+      }
       @if (tag) {
         <span class="tag">{{ tag }}</span>
       }
@@ -73,7 +109,7 @@
         @if (channel?.tv_archive) {
           <app-icon name="archive" class="arch" />
         }
-        <span class="sub-text">{{ starting ? "Starting…" : getSourceName() }}</span>
+        <span class="sub-text">{{ starting ? "Starting…" : cardSubtitle() }}</span>
       </div>
     </div>
   }
@@ -92,6 +128,10 @@
       " mat-menu-item (click)="favorite()">
       <app-icon [name]="alreadyExistsInFav ? 'starOff' : 'star'" />{{ alreadyExistsInFav ? "Remove from favorites" :
       "Add to favorites" }}
+    </button>
+    <button [hidden]="!isGroup()" mat-menu-item (click)="memory.toggleFavoriteGroup(channel!)">
+      <app-icon [name]="memory.isFavoriteGroup(channel?.id) ? 'starOff' : 'star'" />{{
+      memory.isFavoriteGroup(channel?.id) ? "Remove from sidebar" : "Add to sidebar" }}
     </button>
     <button [hidden]="!isLivestream()" mat-menu-item (click)="record()"><app-icon name="record" />Record</button>
     <button [hidden]="!isMovie() || downloading" mat-menu-item (click)="downloadVod()">

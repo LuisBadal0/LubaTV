@@ -2,6 +2,46 @@
 
 use super::*;
 
+/// How a name can start with a country code: "PT: …", "PT | …", "|PT| …", "PT - …", "[PT] …".
+const COUNTRY_PREFIXES: [(&str, &str); 9] = [
+    ("", ":%"),
+    ("", " :%"),
+    ("", "|%"),
+    ("", " |%"),
+    ("", " -%"),
+    ("", "-%"),
+    ("|", "|%"),
+    ("| ", " |%"),
+    ("[", "]%"),
+];
+
+/// LIKE patterns for the country search, or `None` when there is no country search.
+/// Codes that are not 2 to 4 ASCII letters are dropped, so the patterns hold no wildcards.
+fn country_patterns(codes: Option<&[String]>) -> Option<Vec<String>> {
+    let codes = codes?;
+    Some(
+        codes
+            .iter()
+            .map(|code| code.trim().to_ascii_uppercase())
+            .filter(|code| {
+                (2..=4).contains(&code.len()) && code.chars().all(|c| c.is_ascii_alphabetic())
+            })
+            .flat_map(|code| {
+                COUNTRY_PREFIXES
+                    .iter()
+                    .map(move |(before, after)| format!("{before}{code}{after}"))
+            })
+            .collect(),
+    )
+}
+
+/// `LTRIM(name) LIKE ? OR …`, one per country pattern.
+fn prefix_sql(count: usize) -> String {
+    std::iter::repeat_n("LTRIM(name) LIKE ?", count)
+        .collect::<Vec<_>>()
+        .join(" OR ")
+}
+
 pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     if filters.view_type == view_type::CATEGORIES
         && filters.group_id.is_none()
@@ -45,6 +85,17 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
         generate_placeholders(filters.source_ids.len()),
     );
     let mut baked_params = 2;
+    let country = country_patterns(filters.country.as_deref());
+    if let Some(ref patterns) = country {
+        if patterns.is_empty() {
+            return Ok(Vec::new());
+        }
+        sql_query += &format!(
+            "
+AND ({0} OR group_id IN (SELECT id FROM groups WHERE {0}))",
+            prefix_sql(patterns.len())
+        );
+    }
     if filters.view_type == view_type::FAVORITES && filters.series_id.is_none() {
         sql_query += "\nAND favorite = 1";
     }
@@ -79,6 +130,10 @@ pub fn search(filters: Filters) -> Result<Vec<Channel>> {
     params.extend(to_to_sql(&keywords));
     params.extend(to_to_sql(&media_types));
     params.extend(to_to_sql(&filters.source_ids));
+    if let Some(ref patterns) = country {
+        params.extend(to_to_sql(patterns));
+        params.extend(to_to_sql(patterns));
+    }
     if let Some(ref series_id) = filters.series_id {
         params.push(series_id);
     } else if let Some(ref group) = filters.group_id {
@@ -174,6 +229,13 @@ fn get_action_params(action: u8) -> Result<(&'static str, u8)> {
 pub fn bulk_update(filters: Filters, action: u8) -> Result<()> {
     if filters.series_id.is_some() && filters.season.is_none() {
         return Ok(());
+    }
+
+    // Bulk actions don't apply the country search; refuse rather than change more than is shown.
+    if filters.country.is_some() {
+        return Err(anyhow!(
+            "Clear the country search before using bulk actions"
+        ));
     }
 
     let (field, value) = get_action_params(action)?;
@@ -470,6 +532,13 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
         generate_placeholders(media_types.len())
     );
     sql_query += "\nAND hidden = 0";
+    let country = country_patterns(filters.country.as_deref());
+    if let Some(ref patterns) = country {
+        if patterns.is_empty() {
+            return Ok(Vec::new());
+        }
+        sql_query += &format!("\nAND ({})", prefix_sql(patterns.len()));
+    }
     if filters.sort != sort_type::PROVIDER {
         let order = match filters.sort {
             sort_type::ALPHABETICAL_ASC => "ASC",
@@ -482,6 +551,9 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
     params.extend(to_to_sql(&keywords));
     params.extend(to_to_sql(&filters.source_ids));
     params.extend(to_to_sql(&media_types));
+    if let Some(ref patterns) = country {
+        params.extend(to_to_sql(patterns));
+    }
     params.push(&offset);
     params.push(&PAGE_SIZE);
     let channels: Vec<Channel> = sql
@@ -490,4 +562,58 @@ pub fn search_group(filters: Filters) -> Result<Vec<Channel>> {
         .filter_map(Result::ok)
         .collect();
     Ok(channels)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{country_patterns, prefix_sql};
+
+    #[test]
+    fn country_patterns_cover_common_prefixes() {
+        let patterns = country_patterns(Some(&["us".to_string()])).unwrap();
+        for expected in ["US:%", "US |%", "|US|%", "[US]%", "US -%"] {
+            assert!(patterns.contains(&expected.to_string()), "{expected}");
+        }
+    }
+
+    #[test]
+    fn country_patterns_drop_codes_with_wildcards_or_odd_lengths() {
+        let codes = [
+            "U%".to_string(),
+            "X".to_string(),
+            "ABCDE".to_string(),
+            "P_".to_string(),
+        ];
+        assert_eq!(country_patterns(Some(&codes)), Some(vec![]));
+        assert_eq!(country_patterns(None), None);
+    }
+
+    #[test]
+    fn country_filter_matches_prefixed_names_only() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE t (name TEXT);
+             INSERT INTO t VALUES ('PT: Sport TV 1'), ('pt | News'), ('|PT| Movies'), (' PT - Kids'),
+               ('UK: Sky Sports'), ('Portugal Today'), ('PTV World'), ('SPT: Other');",
+        )
+        .unwrap();
+        let patterns = country_patterns(Some(&["PT".to_string()])).unwrap();
+        let query = format!(
+            "SELECT name FROM t WHERE {} ORDER BY rowid",
+            prefix_sql(patterns.len())
+        );
+        let names: Vec<String> = conn
+            .prepare(&query)
+            .unwrap()
+            .query_map(rusqlite::params_from_iter(patterns.iter()), |row| {
+                row.get(0)
+            })
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(
+            names,
+            ["PT: Sport TV 1", "pt | News", "|PT| Movies", " PT - Kids"]
+        );
+    }
 }

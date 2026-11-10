@@ -180,7 +180,7 @@ pub(super) fn row_to_group(row: &Row) -> std::result::Result<Channel, rusqlite::
         url: None,
         series_id: None,
         group_id: None,
-        favorite: false,
+        favorite: row.get::<_, Option<bool>>("favorite")?.unwrap_or(false),
         source_id: row.get("source_id")?,
         stream_id: None,
         tv_archive: None,
@@ -284,6 +284,44 @@ pub fn hide_group(group_id: i64, hidden: bool) -> Result<()> {
     Ok(())
 }
 
+/// Favorite categories are listed in the sidebar.
+pub fn favorite_group(group_id: i64, favorite: bool) -> Result<()> {
+    let sql = get_conn()?;
+    sql.execute(
+        r#"
+        UPDATE groups
+        SET favorite = ?1
+        WHERE id = ?2
+    "#,
+        params![favorite, group_id],
+    )?;
+    Ok(())
+}
+
+/// The favorite categories of the given sources, by name.
+pub fn get_favorite_groups(source_ids: Vec<i64>) -> Result<Vec<Channel>> {
+    if source_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let sql = get_conn()?;
+    let query = format!(
+        r#"
+        SELECT * FROM groups
+        WHERE favorite = 1
+        AND hidden = 0
+        AND source_id IN ({})
+        ORDER BY name ASC
+    "#,
+        generate_placeholders(source_ids.len())
+    );
+    let groups = sql
+        .prepare(&query)?
+        .query_map(params_from_iter(source_ids.iter()), row_to_group)?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(groups)
+}
+
 pub fn remove_last_watched(channel_id: i64) -> Result<()> {
     let sql = get_conn()?;
     sql.execute(
@@ -315,9 +353,9 @@ pub fn get_preserve(tx: &Transaction, source_id: i64) -> Result<Vec<ChannelPrese
     let groups: Vec<ChannelPreserve> = tx
         .prepare(
             r#"
-              SELECT name, hidden
+              SELECT name, hidden, favorite
               FROM groups
-              WHERE hidden = 1
+              WHERE (hidden = 1 OR favorite = 1)
               AND source_id = ?
             "#,
         )?
@@ -343,7 +381,7 @@ fn row_to_group_preserve(row: &Row) -> Result<ChannelPreserve, rusqlite::Error> 
     Ok(ChannelPreserve {
         name: row.get("name")?,
         hidden: row.get("hidden")?,
-        favorite: false,
+        favorite: row.get::<_, Option<bool>>("favorite")?.unwrap_or(false),
         last_watched: None,
         is_group: true,
     })
@@ -359,11 +397,11 @@ pub fn restore_preserve(
             tx.execute(
                 r#"
                   UPDATE groups
-                  SET hidden = ?
+                  SET hidden = ?, favorite = ?
                   WHERE name = ?
                   AND source_id = ?
                 "#,
-                params![item.hidden, item.name, source_id],
+                params![item.hidden, item.favorite, item.name, source_id],
             )?;
         } else {
             tx.execute(

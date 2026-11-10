@@ -4,6 +4,8 @@ import { MemoryService } from "../memory.service";
 import { ViewMode } from "../models/viewMode";
 import { Source } from "../models/source";
 import { SourceType } from "../models/sourceType";
+import { Channel } from "../models/channel";
+import { splitCountryPrefix } from "../countries";
 
 /** Sidebar order; the index is also the keyboard focus id (`viewMode-<index>`). */
 export const SIDEBAR_VIEWS: { view: ViewMode; icon: string; label: string }[] = [
@@ -30,6 +32,8 @@ export function sourceColor(id?: number): string {
 export class SidebarComponent {
   /** The highlighted entry: a view on the home screen, or "settings". */
   @Input() active?: ViewMode | "settings";
+  /** The open category, highlighted when it is a favorite. */
+  @Input() activeCategory?: number;
   @Output() selectView = new EventEmitter<ViewMode>();
 
   readonly views = SIDEBAR_VIEWS;
@@ -64,6 +68,20 @@ export class SidebarComponent {
       this.router.navigateByUrl("");
     } else {
       this.selectView.emit(view);
+    }
+  }
+
+  categoryLabel(group: Channel) {
+    return splitCountryPrefix(group.name ?? "");
+  }
+
+  openCategory(group: Channel) {
+    if (this.active === "settings") {
+      // Home picks this up when it loads.
+      this.memory.PendingCategory = group;
+      this.router.navigateByUrl("");
+    } else {
+      this.memory.OpenCategory.next(group);
     }
   }
 

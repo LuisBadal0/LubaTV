@@ -13,4 +13,6 @@ export class Filters {
   public use_keywords!: boolean;
   public sort?: SortType;
   public season?: number;
+  /** Prefixes of the country being searched, such as ["US", "USA"]. */
+  public country?: string[];
 }

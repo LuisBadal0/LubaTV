@@ -14,8 +14,10 @@
 
 - **Any IPTV source:** M3U files, M3U links and Xtream accounts, with several sources at once
 - **Live TV, movies and series**, with categories, seasons and episodes
-- **Continue watching** on the home screen, and category tiles that preview what's inside
-- **Instant search**, by whole phrase or by keywords
+- **Continue watching** and rows of your favorite categories on the home screen, and category tiles that preview what's inside
+- **Favorite categories** in the sidebar: open a category and choose **Add to sidebar**
+- **A channel list with a preview pane** inside a category, showing the TV guide for Xtream channels
+- **Instant search**, by whole phrase or by keywords. Type a country code in capitals, such as `PT` or `US`, to see everything from that country
 - **Favorites, history and hidden items**, with bulk hide and favorite from the search bar
 - **EPG** for Xtream sources, with notifications for upcoming programmes
 - **Catch-up** on channels that provide an archive
