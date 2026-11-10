@@ -17,6 +17,7 @@ const DEFAULT_ANSWERS: Record<string, unknown> = {
   search: [],
   group_previews: [],
   last_watched_times: {},
+  get_favorite_groups: [],
   get_epg_ids: [],
   get_all_expiries: {},
   "plugin:app|version": "0.0.0-test",

@@ -1,7 +1,8 @@
 <ng-keyboard-shortcuts [shortcuts]="shortcuts"></ng-keyboard-shortcuts>
 <ng-keyboard-shortcuts-help [key]="'f1'" [closeKey]="'escape'" [title]="'Help'" />
 
-<app-sidebar [active]="filters?.view_type" (selectView)="switchMode($event)"></app-sidebar>
+<app-sidebar [active]="filters?.view_type" [activeCategory]="openCategory()?.id"
+  (selectView)="switchMode($event)"></app-sidebar>
 
 <main class="content">
   <header class="topbar" data-tauri-drag-region>
@@ -16,7 +17,16 @@
         @if (nodeStack.hasNodes()) {
           <p class="crumb" data-tauri-drag-region>{{ viewTitle() }}</p>
         }
-        <h1 [title]="pageTitle()" data-tauri-drag-region>{{ pageTitle() }}</h1>
+        <div class="title-row" data-tauri-drag-region>
+          <h1 [title]="pageTitle()" data-tauri-drag-region>{{ pageTitle() }}</h1>
+          @if (openCategory()) {
+            <button type="button" class="fav-cat-btn" [class.on]="isOpenCategoryFavorite()"
+              (click)="toggleOpenCategoryFavorite()" [attr.aria-pressed]="isOpenCategoryFavorite()"
+              [title]="isOpenCategoryFavorite() ? 'Remove from the sidebar' : 'Add to the sidebar'">
+              <app-icon name="star" />{{ isOpenCategoryFavorite() ? "In sidebar" : "Add to sidebar" }}
+            </button>
+          }
+        </div>
         @if (!nodeStack.hasNodes()) {
           <p class="subtitle" data-tauri-drag-region>{{ pageSubtitle() }}</p>
         }
@@ -25,10 +35,20 @@
 
     <div class="search-box">
       <app-icon name="search" class="search-icon" />
+      @if (country) {
+        <span class="country-tag">
+          {{ country.name }}
+          <button type="button" (click)="removeCountry()" [attr.aria-label]="'Stop searching ' + country.name"
+            title="Remove (Backspace)">
+            <app-icon name="close" />
+          </button>
+        </span>
+      }
       <input autocomplete="off" type="text" id="search" #search class="search-input"
-        placeholder="Search channels, movies, series" />
-        <span class="kbd">Ctrl F</span>
-      </div>
+        [attr.aria-label]="country ? 'Search in ' + country.name : 'Search'"
+        [placeholder]="country ? 'Search in ' + country.name : 'Search, or type a country code like PT'" />
+      <span class="kbd">Ctrl F</span>
+    </div>
 
       <div class="actions">
         <button type="button" class="lt-icon-btn" [class.active]="filters?.use_keywords" (click)="toggleKeywords()"
@@ -40,7 +60,8 @@
           <app-icon name="refresh" />
         </button>
         <button type="button" class="lt-icon-btn" [matMenuTriggerFor]="bulkMenu"
-          [class.disabled]="filters?.series_id && !filters?.season" title="Bulk actions">
+          [class.disabled]="(filters?.series_id && !filters?.season) || country" [disabled]="!!country"
+          [title]="country ? 'Bulk actions (not with a country search)' : 'Bulk actions'">
           <app-icon name="dots" />
         </button>
         <mat-menu #bulkMenu="matMenu">
@@ -53,6 +74,21 @@
         </mat-menu>
       </div>
     </header>
+
+    @if (country) {
+      <p class="search-note">
+        Showing everything from {{ country.name }}.
+        <button type="button" class="link-btn accent" (click)="searchCodeAsText()">
+          Search names containing “{{ country.code }}” instead
+        </button>
+      </p>
+    } @else if (suggestedCountry) {
+      <p class="search-note">
+        <button type="button" class="link-btn accent" (click)="chooseCountry(suggestedCountry)">
+          Show everything from {{ suggestedCountry.name }}
+        </button>
+      </p>
+    }
 
     @if (filtersVisible()) {
       <div class="chips">
@@ -86,28 +122,124 @@
             [lastWatched]="lastWatched[channel.id!]"></app-channel-tile>
           }
         </div>
+      </section>
+    }
+
+    @if (showShelves()) {
+      @for (shelf of shelves; track shelf.group.id; let s = $index) {
+        <section class="shelf">
+          <div class="section-head">
+            <h2>
+              @if (shelf.code) {
+                <span class="cc">{{ shelf.code }}</span>
+              }
+              {{ shelf.title }}
+            </h2>
+            <button type="button" class="link-btn" (click)="openFavoriteCategory(shelf.group)">Show all</button>
+          </div>
+          <div class="shelf-row">
+            @for (channel of shelf.items; track trackChannel(i, channel); let i = $index) {
+              <app-channel-tile idPrefix="shelf-" [id]="shelfOffset(s) + i" [channel]="channel"
+                [viewMode]="viewModeEnum.All"></app-channel-tile>
+            }
+          </div>
+        </section>
+      }
+    }
+
+    @if (showCountryCategories()) {
+      <section>
         <div class="section-head">
-          <h2>Everything</h2>
+          <h2>Categories in {{ country?.name }}</h2>
+          <button type="button" class="link-btn" (click)="showAllCountryCategories()">Show all</button>
+        </div>
+        <div class="tile-grid cats country-cats">
+          @for (category of countryCategories; track category.id; let i = $index) {
+            <app-channel-tile idPrefix="ccat-" [id]="i" [channel]="category"
+              [viewMode]="viewModeEnum.Categories" [preview]="previews[category.id!]"></app-channel-tile>
+          }
         </div>
       </section>
     }
 
-    <div class="tile-grid" [class.cats]="isCategoryGrid()" [@fade]="channelsVisible ? 'visible' : 'hidden'">
-      @for (channel of channels; track trackChannel(i, channel); let i = $index) {
-        <app-channel-tile [attr.id]="i == 0 ? 'first' : null"
-          [id]="i" [channel]="channel"
-        [viewMode]="viewType" [preview]="previews[channel.id!]"></app-channel-tile>
-      }
-    </div>
+    @if (showRecent() || showShelves() || showCountryCategories()) {
+      <div class="section-head">
+        <h2>{{ country ? "Channels in " + country.name : "Everything" }}</h2>
+      </div>
+    }
+
+    @if (isChannelList()) {
+      <div class="list-layout">
+        <div class="tile-grid main list" [@fade]="channelsVisible ? 'visible' : 'hidden'">
+          @for (channel of channels; track trackChannel(i, channel); let i = $index) {
+            <app-channel-tile [attr.id]="i == 0 ? 'first' : null" variant="row"
+              [id]="i" [channel]="channel" [viewMode]="viewType"
+              [selected]="channel === previewItem" (picked)="setPreview($event, i)"></app-channel-tile>
+          }
+        </div>
+        @if (previewItem; as item) {
+          <aside class="preview-pane" aria-label="Preview">
+            <div class="preview-plate">
+              @if (item.image) {
+                <img [src]="item.image" alt="" />
+              } @else {
+                <app-icon name="tv" />
+              }
+            </div>
+            <h2>{{ item.name }}</h2>
+            <p class="preview-sub">
+              {{ previewIndex + 1 }} · {{ openCategory()?.name }}
+              @if (item.tv_archive) {
+                · Catch-up
+              }
+            </p>
+            <div class="preview-actions">
+              <button type="button" class="btn btn-primary watch-btn" (click)="playPreview()">
+                <app-icon name="play" />{{ previewAction() }}
+              </button>
+              @if (item.media_type != mediaTypeEnum.serie) {
+                <button type="button" class="lt-icon-btn" [class.on]="item.favorite"
+                  (click)="togglePreviewFavorite()"
+                  [attr.aria-label]="item.favorite ? 'Remove from favorites' : 'Add to favorites'"
+                  [title]="item.favorite ? 'Remove from favorites' : 'Add to favorites'">
+                  <app-icon [name]="item.favorite ? 'starOff' : 'star'" />
+                </button>
+              }
+            </div>
+            @if (previewEpg.length) {
+              <p class="preview-head">Schedule</p>
+              <ul class="schedule">
+                @for (epg of previewEpg; track epg.epg_id) {
+                  <li [class.now]="epg.now_playing">
+                    <span class="time">{{ epg.start_time }}</span>
+                    <span class="what">{{ epg.title }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </aside>
+        }
+      </div>
+    } @else {
+      <div class="tile-grid main" [class.cats]="isCategoryGrid()" [@fade]="channelsVisible ? 'visible' : 'hidden'">
+        @for (channel of channels; track trackChannel(i, channel); let i = $index) {
+          <app-channel-tile [attr.id]="i == 0 ? 'first' : null"
+            [id]="i" [channel]="channel"
+            [viewMode]="viewType" [preview]="previews[channel.id!]"></app-channel-tile>
+        }
+      </div>
+    }
 
     @if (filters && !loading && channels.length == 0) {
       <div class="empty-state">
         <app-icon name="tv" />
         <p class="empty-title">Nothing to show here</p>
         @if (filters.query) {
-          <p class="empty-hint">No results for “{{ filters.query }}”. Try another search.</p>
+          <p class="empty-hint">No results for “{{ filters.query }}”{{ country ? " in " + country.name : "" }}. Try another search.</p>
+        } @else if (country) {
+          <p class="empty-hint">No names here start with {{ country.code }}. Try another view or country.</p>
         }
-        @if (!filters.query) {
+        @if (!filters.query && !country) {
           <p class="empty-hint">Try another view or turn on more media types.</p>
         }
       </div>

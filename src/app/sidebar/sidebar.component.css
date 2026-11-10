@@ -120,6 +120,32 @@
   margin: 0 5px;
 }
 
+.fav-cat.on {
+  background: var(--lt-active-bg);
+  color: var(--lt-text);
+}
+
+.cc {
+  flex: 0 0 auto;
+  min-width: 28px;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: var(--lt-surface-3);
+  color: var(--lt-text);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.cat-star {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0 6px;
+  color: var(--lt-favorite);
+}
+
 .foot {
   margin-top: auto;
   padding-top: 12px;
@@ -141,6 +167,10 @@
   .label,
   .sect {
     display: none;
+  }
+
+  .fav-cat .cc {
+    min-width: 0;
   }
 
   .nav-item,

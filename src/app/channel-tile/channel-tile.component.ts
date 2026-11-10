@@ -4,8 +4,10 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   OnChanges,
+  Output,
   OnDestroy,
   Renderer2,
   SimpleChanges,
@@ -37,6 +39,7 @@ import { ViewMode } from "../models/viewMode";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { GroupPreview } from "../models/groupPreview";
 import { TimeAgoPipe } from "../pipes/time-ago.pipe";
+import { splitCountryPrefix } from "../countries";
 
 /** Card tints, picked from the name so a channel always gets the same colour. */
 const TINTS: [string, string][] = [
@@ -44,8 +47,9 @@ const TINTS: [string, string][] = [
   ["#7C3AED", "#C084FC"], ["#0891B2", "#22D3EE"], ["#DB2777", "#F472B6"], ["#4B5563", "#9CA3AF"],
 ];
 
-/** "UK | Channel" or "|UK| Channel": a short country prefix shown as a corner tag. */
-const COUNTRY_PREFIX = /^\s*\|?\s*([A-Z]{2,3})\s*\|\s*(\S.*)$/;
+
+/** "EN | Channel" or "|4K| Channel": a short prefix that isn't a known country. */
+const SHORT_PREFIX = /^\s*\|?\s*([A-Z0-9]{2,3})\s*\|\s*(\S.*)$/;
 
 const timeAgo = new TimeAgoPipe();
 
@@ -83,8 +87,12 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
   @Input() channel?: Channel;
   @Input() id!: number;
   @Input() viewMode: number = 0;
-  /** "card" in the grid, "wide" in the Continue watching row. */
-  @Input() variant: "card" | "wide" = "card";
+  /** "card" in the grid, "wide" in Continue watching, "row" in a category's channel list. */
+  @Input() variant: "card" | "wide" | "row" = "card";
+  /** Highlighted as the item shown in the category preview pane. */
+  @Input() selected = false;
+  /** Hovered or focused: the category preview pane shows this item. */
+  @Output() picked = new EventEmitter<Channel>();
   /** Keyboard focus id prefix; home's focus areas look tiles up by it. */
   @Input() idPrefix = "tile-";
   /** Count and logos for a category tile. */
@@ -141,9 +149,11 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
 
   private updateDisplay() {
     const name = this.channel?.name ?? "";
-    const prefix = COUNTRY_PREFIX.exec(name);
-    this.tag = prefix?.[1];
-    this.displayName = prefix ? prefix[2] : name;
+    // "PT: Channel", "UK | Channel"…: a country, or any short "XX |" prefix, becomes a corner tag.
+    const country = splitCountryPrefix(name);
+    const prefix = country.code ? undefined : SHORT_PREFIX.exec(name);
+    this.tag = country.code ?? prefix?.[1];
+    this.displayName = prefix ? prefix[2] : country.rest;
     const words = this.displayName.match(/[\p{L}\p{N}]+/gu) ?? [];
     const first = words[0] ?? "?";
     const second = words[1];
@@ -151,7 +161,8 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
     const [c, c2] = TINTS[hash(name) % TINTS.length];
     this.tintStyle = `--c:${c};--c2:${c2};--tint:${rgba(c, 0.3)};--tint-strong:${rgba(c, 0.55)}`;
     // Show the full name on hover only when the card may not fit it.
-    this.tooltip = this.tag || this.displayName.length > 30 ? name : "";
+    // List rows are wide enough for the whole name.
+    this.tooltip = this.variant != "row" && (this.tag || this.displayName.length > 30) ? name : "";
   }
 
   isGroup(): boolean {
@@ -173,6 +184,21 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
     }
   }
 
+  pick() {
+    if (this.channel) this.picked.emit(this.channel);
+  }
+
+  /** "Live", "Movie", "Series"… for list rows. */
+  typeLabel(): string {
+    const type = this.badgeText().toLowerCase();
+    return type == "live" ? "Live" : type.charAt(0).toUpperCase() + type.slice(1);
+  }
+
+  /** The source, when there is more than one to tell apart. */
+  cardSubtitle(): string {
+    return this.memory.Sources.size > 1 ? this.getSourceName() : "";
+  }
+
   countText(): string {
     if (!this.preview) return "Category";
     const count = this.preview.count;
@@ -188,8 +214,7 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
   }
 
   wideSubtitle(): string {
-    const type = this.badgeText().toLowerCase();
-    const label = type == "live" ? "Live" : type.charAt(0).toUpperCase() + type.slice(1);
+    const label = this.typeLabel();
     const when = this.lastWatched ? timeAgo.transform(this.lastWatched * 1000) : this.getSourceName();
     return when ? `${label} · ${when}` : label;
   }

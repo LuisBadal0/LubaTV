@@ -14,6 +14,23 @@
     }
   </nav>
 
+  @if (memory.FavoriteGroups | async; as favorites) {
+    @if (favorites.length) {
+      <div class="sect">Favorite categories</div>
+      @for (group of favorites; track group.id) {
+        <button type="button" class="src fav-cat" [class.on]="activeCategory === group.id"
+          (click)="openCategory(group)" [title]="group.name">
+          @if (categoryLabel(group).code; as code) {
+            <span class="cc">{{ code }}</span>
+          } @else {
+            <app-icon name="star" class="cat-star" />
+          }
+          <span class="label">{{ categoryLabel(group).rest }}</span>
+        </button>
+      }
+    }
+  }
+
   @if (sources.length) {
     <div class="sect">Sources</div>
     @for (source of sources; track source) {

@@ -48,6 +48,20 @@ import { SIDEBAR_VIEWS } from "../sidebar/sidebar.component";
 import { pageScroller } from "../page-scroll";
 
 import { BulkActionType } from '../models/bulkActionType';
+import { Country, findCountry, splitCountryPrefix } from "../countries";
+import { EPG } from "../models/epg";
+
+/** A row of a favorite category's first items on the All view. */
+interface Shelf {
+  group: Channel;
+  code?: string;
+  title: string;
+  items: Channel[];
+}
+
+const SHELF_LIMIT = 6;
+const SHELF_SIZE = 14;
+const COUNTRY_CATEGORY_LIMIT = 8;
 
 @Component({
     selector: "app-home",
@@ -105,6 +119,21 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   lastWatched: Record<number, number> = {};
   /** Item counts and logos for category tiles, by group id. */
   previews: Record<number, GroupPreview> = {};
+  /** Favorite categories shown as rows on the All view. */
+  shelves: Shelf[] = [];
+  /** The country being searched ("US" typed in capitals), shown as a tag in the search box. */
+  country?: Country;
+  /** A country a lowercase search could mean, offered under the search box. */
+  suggestedCountry?: Country;
+  /** A code the viewer chose to search as text, so it isn't turned into a country again. */
+  private textSearchCode?: string;
+  /** Categories of the searched country, above its channels. */
+  countryCategories: Channel[] = [];
+  /** The item shown in the preview pane next to a category's channel list. */
+  previewItem?: Channel;
+  previewIndex = 0;
+  previewEpg: EPG[] = [];
+  private epgTimer?: ReturnType<typeof setTimeout>;
   private scrollFrame = 0;
 
   scrollToTop() {
@@ -192,7 +221,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
             sessionStorage.setItem("refreshedOnStart", "true");
             this.refreshOnStart().then((_) => _);
           }
-          this.load().then((_) => _);
+          this.memory.loadFavoriteGroups();
+          const pending = this.memory.PendingCategory;
+          this.memory.PendingCategory = undefined;
+          if (pending) this.openFavoriteCategory(pending);
+          else this.load().then((_) => _);
         }
       })
       .catch((e) => {
@@ -260,6 +293,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
             dto.type,
             this.filters?.query,
             this.filters?.view_type,
+            this.country,
           ),
         );
         if (dto.type == NodeType.Category) this.filters!.group_id = dto.id;
@@ -285,6 +319,14 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       }),
     );
     this.subscriptions.push(
+      this.memory.OpenCategory.subscribe((group) => this.openFavoriteCategory(group)),
+    );
+    this.subscriptions.push(
+      this.memory.FavoriteGroups.pipe(skip(1)).subscribe(() => {
+        if (this.wantsShelves()) this.loadShelves();
+      }),
+    );
+    this.subscriptions.push(
       this.memory.Sort.pipe(skip(1)).subscribe(async ([sort, load]) => {
         if (!this.filters || !load) return;
         this.filters!.sort = sort;
@@ -297,6 +339,77 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     this.search.nativeElement.value = "";
     this.prevSearchValue = "";
     this.filters!.query = "";
+    this.suggestedCountry = undefined;
+    this.textSearchCode = undefined;
+    this.clearCountry();
+  }
+
+  /** Searches a country: its tag goes in the search box, and the box narrows within it. */
+  private setCountry(country: Country) {
+    this.country = country;
+    this.filters!.country = country.prefixes;
+    this.suggestedCountry = undefined;
+    this.search.nativeElement.value = "";
+    this.prevSearchValue = "";
+    this.filters!.query = "";
+  }
+
+  private clearCountry() {
+    this.country = undefined;
+    if (this.filters) this.filters.country = undefined;
+    this.countryCategories = [];
+  }
+
+  async chooseCountry(country: Country) {
+    this.setCountry(country);
+    await this.load();
+    this.search.nativeElement.focus({ preventScroll: true });
+  }
+
+  async removeCountry() {
+    this.clearCountry();
+    await this.load();
+    this.search.nativeElement.focus({ preventScroll: true });
+  }
+
+  /** The viewer meant the letters, not the country: search names containing them. */
+  async searchCodeAsText() {
+    const code = this.country?.code;
+    if (!code) return;
+    this.clearCountry();
+    this.textSearchCode = code;
+    this.search.nativeElement.value = code;
+    this.prevSearchValue = code;
+    this.filters!.query = code;
+    await this.load();
+  }
+
+  /** All categories of the searched country. */
+  async showAllCountryCategories() {
+    this.filters!.view_type = ViewMode.Categories;
+    this.filters!.group_id = undefined;
+    this.filters!.series_id = undefined;
+    this.filters!.season = undefined;
+    this.nodeStack.clear();
+    await this.load();
+  }
+
+  /** Opens a favorite category from the sidebar or a shelf, with Back going to Categories. */
+  openFavoriteCategory(group: Channel) {
+    if (!this.filters) return;
+    this.filters.view_type = ViewMode.Categories;
+    this.filters.group_id = undefined;
+    this.filters.series_id = undefined;
+    this.filters.season = undefined;
+    this.filters.source_ids = Array.from(this.memory.Sources.keys());
+    this.clearSearch();
+    this.nodeStack.clear();
+    this.memory.SetNode.next({
+      id: group.id!,
+      name: group.name!,
+      type: NodeType.Category,
+      sourceId: group.source_id,
+    });
   }
 
   loadMore() {
@@ -324,6 +437,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       if (!more) {
         this.previews = {};
         if (this.wantsRecent()) this.loadRecent();
+        if (this.wantsShelves()) this.loadShelves();
+        else this.shelves = [];
+        if (this.wantsCountryCategories()) this.loadCountryCategories();
+        else this.countryCategories = [];
+        this.setPreview(this.isChannelList() ? this.channels[0] : undefined, 0);
       }
       this.loadPreviews(channels);
     } catch (e) {
@@ -336,6 +454,169 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   private wantsRecent(): boolean {
     const f = this.filters;
     return !!f && f.view_type == ViewMode.All && !f.query && !f.group_id && !f.series_id;
+  }
+
+  /** Favorite category rows belong on the unfiltered All view too. */
+  private wantsShelves(): boolean {
+    return this.wantsRecent() && !this.country;
+  }
+
+  private wantsCountryCategories(): boolean {
+    const f = this.filters;
+    return !!this.country && !!f && f.view_type == ViewMode.All && !f.group_id && !f.series_id;
+  }
+
+  showShelves(): boolean {
+    return this.viewType == ViewMode.All && this.wantsShelves() && this.shelves.length > 0;
+  }
+
+  showCountryCategories(): boolean {
+    return (
+      this.viewType == ViewMode.All && this.wantsCountryCategories() && this.countryCategories.length > 0
+    );
+  }
+
+  /** Inside a category: its items as a list, with a preview pane. */
+  isChannelList(): boolean {
+    return !!this.filters?.group_id && !this.filters?.series_id;
+  }
+
+  /** The open category, when the page shows one. */
+  openCategory(): Node | undefined {
+    const node = this.nodeStack.get();
+    return node?.type == NodeType.Category ? node : undefined;
+  }
+
+  isOpenCategoryFavorite(): boolean {
+    return this.memory.isFavoriteGroup(this.openCategory()?.id);
+  }
+
+  toggleOpenCategoryFavorite() {
+    const node = this.openCategory();
+    if (node) this.memory.toggleFavoriteGroup({ id: node.id, name: node.name });
+  }
+
+  private async loadShelves() {
+    const groups = this.memory.FavoriteGroups.value.slice(0, SHELF_LIMIT);
+    if (!groups.length || !this.filters) {
+      this.shelves = [];
+      return;
+    }
+    const base = this.filters;
+    try {
+      const rows = await Promise.all(
+        groups.map((group) =>
+          invoke<Channel[]>("search", {
+            filters: {
+              ...base,
+              view_type: ViewMode.All,
+              page: 1,
+              query: "",
+              use_keywords: false,
+              group_id: group.id,
+              series_id: undefined,
+              season: undefined,
+              country: undefined,
+            },
+          }),
+        ),
+      );
+      if (!this.wantsShelves()) return;
+      this.shelves = groups
+        .map((group, i) => {
+          const { code, rest } = splitCountryPrefix(group.name ?? "");
+          return { group, code, title: rest, items: rows[i].slice(0, SHELF_SIZE) };
+        })
+        .filter((shelf) => shelf.items.length > 0);
+    } catch (e) {
+      console.error(e);
+      this.shelves = [];
+    }
+  }
+
+  /** Where each shelf's items start in the shelves' shared keyboard numbering. */
+  shelfOffset(index: number): number {
+    let offset = 0;
+    for (let i = 0; i < index; i++) offset += this.shelves[i].items.length;
+    return offset;
+  }
+
+  private async loadCountryCategories() {
+    try {
+      const categories: Channel[] = await invoke("search", {
+        filters: {
+          ...this.filters,
+          view_type: ViewMode.Categories,
+          page: 1,
+          group_id: undefined,
+          series_id: undefined,
+          season: undefined,
+        },
+      });
+      if (!this.wantsCountryCategories()) return;
+      this.countryCategories = categories.slice(0, COUNTRY_CATEGORY_LIMIT);
+      this.loadPreviews(this.countryCategories);
+    } catch (e) {
+      console.error(e);
+      this.countryCategories = [];
+    }
+  }
+
+  /** Shows an item in the preview pane; its TV guide loads once the pointer settles. */
+  setPreview(item: Channel | undefined, index: number) {
+    if (item === this.previewItem) return;
+    this.previewItem = item;
+    this.previewIndex = index;
+    this.previewEpg = [];
+    clearTimeout(this.epgTimer);
+    if (!item || !this.hasGuide(item)) return;
+    this.epgTimer = setTimeout(async () => {
+      try {
+        const epg: EPG[] = await invoke("get_epg", { channel: item });
+        if (this.previewItem === item) this.previewEpg = epg.slice(0, 6);
+      } catch (e) {
+        console.error(e);
+      }
+    }, 350);
+  }
+
+  hasGuide(item: Channel): boolean {
+    return (
+      item.media_type == MediaType.livestream &&
+      !this.memory.CustomSourceIds.has(item.source_id!) &&
+      this.memory.XtreamSourceIds.has(item.source_id!)
+    );
+  }
+
+  /** Starts the preview pane's item through its row, so playing works the same everywhere. */
+  playPreview() {
+    document.getElementById(`tile-${this.previewIndex}`)?.click();
+  }
+
+  previewAction(): string {
+    switch (this.previewItem?.media_type) {
+      case MediaType.serie:
+        return "Open series";
+      case MediaType.movie:
+        return "Play";
+      default:
+        return "Watch";
+    }
+  }
+
+  async togglePreviewFavorite() {
+    const item = this.previewItem;
+    if (!item) return;
+    try {
+      await invoke(item.favorite ? "unfavorite_channel" : "favorite_channel", { channelId: item.id });
+      item.favorite = !item.favorite;
+      // The row shows the star too; a new item reference re-renders it.
+      const copy = { ...item };
+      this.channels = this.channels.map((c) => (c === item ? copy : c));
+      this.previewItem = copy;
+    } catch (e) {
+      this.error.handleError(e, `Failed to update "${item.name}"`);
+    }
   }
 
   showRecent(): boolean {
@@ -405,7 +686,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
 
   pageSubtitle(): string {
     const count = this.memory.Sources.size;
-    const sources = `${count} ${count == 1 ? "source" : "sources"}`;
+    const sources = this.country
+      ? this.country.name
+      : `${count} ${count == 1 ? "source" : "sources"}`;
     if (this.filters?.view_type == ViewMode.History) return `${sources} · most recent first`;
     switch (this.filters?.sort) {
       case SortType.alphabeticalAscending:
@@ -461,9 +744,31 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
           debounceTime(300),
         )
         .subscribe(async (term: string) => {
+          const country = this.country ? undefined : findCountry(term);
+          const code = term.trim();
+          if (country && code.toUpperCase() != this.textSearchCode) {
+            // Capitals ("US", "PT") mean the country; lowercase is offered as a suggestion.
+            if (code == code.toUpperCase()) {
+              this.setCountry(country);
+              await this.load();
+              return;
+            }
+            this.suggestedCountry = country;
+          } else {
+            this.suggestedCountry = undefined;
+          }
           this.filters!.query = term;
           await this.load();
         }),
+    );
+    this.subscriptions.push(
+      fromEvent<KeyboardEvent>(this.search.nativeElement, "keydown")
+        .pipe(
+          filter(
+            (event) => event.key == "Backspace" && !this.search.nativeElement.value && !!this.country,
+          ),
+        )
+        .subscribe(() => this.removeCountry()),
     );
 
     this.shortcuts.push(
@@ -625,11 +930,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       this.closeContextMenu();
     } else if (this.searchFocused()) {
       this.selectFirstChannel();
-    } else if (this.filters?.query) {
-      if (this.filters?.query) {
-        this.clearSearch();
-        await this.load();
-      }
+    } else if (this.filters?.query || this.country) {
+      this.clearSearch();
+      await this.load();
       this.selectFirstChannelDelayed(100);
     } else if (this.nodeStack.hasNodes()) {
       await this.goBack();
@@ -654,7 +957,12 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     }
     if (node.query) {
       this.search.nativeElement.value = node.query;
+      this.prevSearchValue = node.query;
       this.filters!.query = node.query;
+    }
+    if (node.country) {
+      this.country = node.country;
+      this.filters!.country = node.country.prefixes;
     }
     if (node.fromViewType && this.filters!.view_type !== node.fromViewType) {
       this.filters!.view_type = node.fromViewType;
@@ -685,6 +993,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     }
     if (count == 0) return this.enterContent();
 
+    if (area == FocusArea.Shelves && key.startsWith("Arrow")) return this.navShelves(key);
+
     const cols = this.areaColumns(area);
     const col = this.focus % cols;
     switch (key) {
@@ -714,6 +1024,32 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  /** Shelves are rows of different lengths: left and right move in a row, up and down between rows. */
+  private navShelves(key: string) {
+    let shelf = 0;
+    while (shelf < this.shelves.length - 1 && this.focus >= this.shelfOffset(shelf + 1)) shelf++;
+    const start = this.shelfOffset(shelf);
+    const length = this.shelves[shelf].items.length;
+    const pos = this.focus - start;
+    switch (key) {
+      case "ArrowLeft":
+        if (pos == 0) return this.focusItem(FocusArea.ViewMode, this.viewModeIndex());
+        return this.focusItem(FocusArea.Shelves, this.focus - 1);
+      case "ArrowRight":
+        if (pos < length - 1) this.focusItem(FocusArea.Shelves, this.focus + 1);
+        return;
+      case "ArrowUp":
+      case "ArrowDown": {
+        const target = shelf + (key == "ArrowUp" ? -1 : 1);
+        if (target < 0 || target >= this.shelves.length) {
+          return this.moveToArea(FocusArea.Shelves, key == "ArrowUp" ? -1 : 1, pos);
+        }
+        const index = this.shelfOffset(target) + Math.min(pos, this.shelves[target].items.length - 1);
+        return this.focusItem(FocusArea.Shelves, index);
+      }
+    }
+  }
+
   private areaCount(area: FocusArea): number {
     switch (area) {
       case FocusArea.ViewMode:
@@ -722,6 +1058,10 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
         return this.filtersVisible() ? (this.hasXtream ? 3 : 2) : 0;
       case FocusArea.Recent:
         return this.showRecent() ? this.recent.length : 0;
+      case FocusArea.Shelves:
+        return this.showShelves() ? this.shelfOffset(this.shelves.length) : 0;
+      case FocusArea.CountryCategories:
+        return this.showCountryCategories() ? this.countryCategories.length : 0;
       default:
         return this.channels.length;
     }
@@ -731,7 +1071,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   private areaColumns(area: FocusArea): number {
     if (area == FocusArea.ViewMode) return 1;
     if (area == FocusArea.Tiles) {
-      const grid = document.querySelector(".tile-grid");
+      const grid = document.querySelector(".tile-grid.main");
+      if (grid) return this.cssColumns(grid);
+    }
+    if (area == FocusArea.CountryCategories) {
+      const grid = document.querySelector(".tile-grid.country-cats");
       if (grid) return this.cssColumns(grid);
     }
     return Math.max(1, this.areaCount(area));
@@ -743,7 +1087,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
 
   /** The nearest non-empty content area above (-1) or below (1). */
   private adjacentArea(area: FocusArea, direction: number): FocusArea | undefined {
-    const order = [FocusArea.Filters, FocusArea.Recent, FocusArea.Tiles];
+    const order = [
+      FocusArea.Filters,
+      FocusArea.Recent,
+      FocusArea.Shelves,
+      FocusArea.CountryCategories,
+      FocusArea.Tiles,
+    ];
     for (let i = order.indexOf(area) + direction; i >= 0 && i < order.length; i += direction) {
       if (this.areaCount(order[i]) > 0) return order[i];
     }
@@ -753,6 +1103,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   private moveToArea(area: FocusArea, direction: number, col: number) {
     const next = this.adjacentArea(area, direction);
     if (next == undefined) return;
+    if (next == FocusArea.Shelves) {
+      const shelf = direction > 0 ? 0 : this.shelves.length - 1;
+      const index = this.shelfOffset(shelf) + Math.min(col, this.shelves[shelf].items.length - 1);
+      return this.focusItem(next, index);
+    }
     const count = this.areaCount(next);
     const cols = this.areaColumns(next);
     const lastRowStart = Math.floor((count - 1) / cols) * cols;
@@ -761,7 +1116,13 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   private enterContent() {
-    const first = [FocusArea.Tiles, FocusArea.Recent, FocusArea.Filters].find((a) => this.areaCount(a) > 0);
+    const first = [
+      FocusArea.Tiles,
+      FocusArea.CountryCategories,
+      FocusArea.Shelves,
+      FocusArea.Recent,
+      FocusArea.Filters,
+    ].find((a) => this.areaCount(a) > 0);
     if (first != undefined) this.focusItem(first, 0);
   }
 
@@ -825,6 +1186,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy() {
     pageScroller().removeEventListener("scroll", this.onScroll);
     cancelAnimationFrame(this.scrollFrame);
+    clearTimeout(this.epgTimer);
     this.subscriptions.forEach((x) => x.unsubscribe());
   }
 
@@ -834,7 +1196,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   }
 
   async bulkAction(action: BulkActionType) {
-    if (this.filters?.series_id && !this.filters?.season) {
+    if ((this.filters?.series_id && !this.filters?.season) || this.country) {
       return;
     }
     const actionName = BulkActionType[action].toLowerCase();

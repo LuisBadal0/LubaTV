@@ -107,6 +107,10 @@ pub struct Filters {
     pub use_keywords: bool,
     pub sort: u8,
     pub season: Option<i64>,
+    /// Country codes, such as `["US", "USA"]`: only items whose name, or whose category's
+    /// name, starts with one of them as a prefix ("US: …", "US | …").
+    #[serde(default)]
+    pub country: Option<Vec<String>>,
 }
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize, Default)]

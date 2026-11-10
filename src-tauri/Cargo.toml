@@ -1,6 +1,6 @@
 [package]
 name = "lubatv"
-version = "1.4.3"
+version = "1.5.0"
 description = "A fast, keyboard-friendly IPTV player"
 authors = ["Luís Badalo"]
 license = "GPL-2.0"

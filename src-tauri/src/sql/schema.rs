@@ -192,6 +192,11 @@ fn apply_migrations() -> Result<()> {
               ANALYZE;
             "#,
         ),
+        M::up(
+            r#"
+              ALTER TABLE groups ADD COLUMN favorite integer DEFAULT 0;
+            "#,
+        ),
     ]);
     migrations.to_latest(&mut sql)?;
     Ok(())
