@@ -3,8 +3,9 @@ name: Refresh player files
 # Pins newer builds of the Windows player files (mpv and its Vulkan loader, ffmpeg, yt-dlp).
 # Only files whose checksum changed are published, as a new player-files-<date> release,
 # and a branch updating src-tauri/player-files.json is pushed. Open a pull request from it
-# (the link is in the run summary) and bump the version to ship the new files: installers
-# include them, and installed copies download only the files that changed.
+# (the link is in the run summary) and note the update under "Unreleased" in CHANGELOG.md.
+# The next release ships the new files: installers include them, and installed copies
+# download only the files that changed.
 
 on:
   workflow_dispatch:
@@ -89,5 +90,5 @@ jobs:
             ""
             "Open a pull request: https://github.com/$env:GITHUB_REPOSITORY/compare/main...$($branch)?expand=1"
             ""
-            "Bump the version in the same pull request to ship the new player files."
+            "Add a line under **Unreleased** in CHANGELOG.md. The next release ships the new player files."
           ) -join "`n" >> $env:GITHUB_STEP_SUMMARY

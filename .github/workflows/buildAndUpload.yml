@@ -2,8 +2,10 @@ name: Build and Release
 
 # Every push and pull request builds the Windows installers and Linux packages.
 # A push to main (a merged pull request) also publishes them as GitHub release
-# v<version>, unless that version was already released: bump the version in
-# tauri.conf.json, package.json and src-tauri/Cargo.toml to publish a new one.
+# v<version>, with the version's CHANGELOG.md section as its notes, unless that
+# version was already released. Releases are batched: only a release PR bumps the
+# version in tauri.conf.json, package.json and src-tauri/Cargo.toml (see
+# CONTRIBUTING.md).
 
 on:
   push:
@@ -36,6 +38,15 @@ jobs:
             exit 1
           fi
           echo "version=$tauri" >> "$GITHUB_OUTPUT"
+
+      # A release PR can't merge without its notes: the version needs a dated
+      # CHANGELOG.md section with at least one bullet.
+      - name: Changelog has this version's notes
+        env:
+          VERSION: ${{ steps.read.outputs.version }}
+        run: |
+          bash .github/scripts/test-release-notes.sh
+          bash .github/scripts/release-notes.sh "$VERSION" > /dev/null
 
   build:
     needs: version
@@ -213,7 +224,11 @@ jobs:
           else
             echo "::warning::No signed update installers; this release will not reach installed copies automatically"
           fi
-          cat > notes.md <<'EOF'
+          # The version's CHANGELOG.md section, then how to install, then GitHub's
+          # list of merged pull requests.
+          bash .github/scripts/release-notes.sh "${TAG#v}" > notes.md
+          cat >> notes.md <<'EOF'
+
           ## Install
 
           - **Windows:** run `LubaTV_*_x64-setup.exe` (installs for your user, no admin needed) or the `.msi` (installs for all users). mpv, ffmpeg and yt-dlp are included. The installers are not code-signed yet, so Windows SmartScreen may warn: choose **More info → Run anyway**. From v1.2.0, LubaTV offers new versions itself; you can also use **Settings → About → Check for updates**.

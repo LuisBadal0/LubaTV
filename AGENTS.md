@@ -38,22 +38,32 @@ Run these before saying a change is done, and report the results in the PR's **C
 - Frontend tests fake the Tauri backend with `mockTauri()` from `src/testing/test-setup.ts`.
   Tests never use real IPTV accounts or playlists; use made-up addresses and fixtures.
 
-## Versions
+## Versions and releases
 
-The version is stored in three files that must match (CI checks it):
+Releases are batched, as the global rules describe: a user-facing PR adds a bullet under
+**Unreleased** in `CHANGELOG.md` and keeps the version. Only a release PR, made when the
+owner asks, bumps the version. A release PR here also:
 
-- `package.json`
-- `src-tauri/Cargo.toml` (and the matching `lubatv` entry in `src-tauri/Cargo.lock`)
-- `src-tauri/tauri.conf.json`
+- bumps the version in all five places, which must match (CI checks the first three):
+  - `package.json`
+  - `src-tauri/Cargo.toml`
+  - `src-tauri/tauri.conf.json`
+  - the `lubatv` entry in `src-tauri/Cargo.lock`
+  - the top-level `version` fields in `package-lock.json`
+- rewrites the **What's new** window (`src/app/whats-new-modal/whats-new-modal.component.html`)
+  from the release's changelog section, with the newest release first.
 
-Merging a new version to `main` publishes GitHub release `v<version>`, the Windows updater
-files and the Docker image. Don't create tags or releases by hand.
+Merging it publishes GitHub release `v<version>`, the Windows updater files and the Docker
+image. The release notes come from `CHANGELOG.md` through `.github/scripts/release-notes.sh`.
+CI's **Check version** job fails when the current version has no dated section with
+bullets. Don't create tags or releases by hand. `CONTRIBUTING.md` has the full steps.
 
 ## Pull requests
 
 - This repository is a fork. `gh` defaults to the upstream repository, so always pass
   `-R LuisBadal0/LubaTV --base main` to `gh pr create`.
 - Use the sections from `.github/pull_request_template.md`: Changes, Checks, Version.
+  **Version** is "No version change" except in a release PR.
 - When one PR builds on another, base its branch on the other and say "Stacked on #N" at
   the top of the body.
 
