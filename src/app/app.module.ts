@@ -35,6 +35,8 @@ import { LegacyDataModalComponent } from './legacy-data-modal/legacy-data-modal.
 import { IconComponent } from './icon/icon.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { UpdatePromptComponent } from './update-prompt/update-prompt.component';
+import { ReleaseNotesComponent } from './release-notes/release-notes.component';
+import { WhatsNewModalComponent } from './whats-new-modal/whats-new-modal.component';
 import { WindowControlsComponent } from './window-controls/window-controls.component';
 
 import { TimeAgoPipe } from "./pipes/time-ago.pipe";
@@ -71,6 +73,8 @@ import { TimeUntilPipe } from './pipes/time-until.pipe';
     IconComponent,
     SidebarComponent,
     UpdatePromptComponent,
+    ReleaseNotesComponent,
+    WhatsNewModalComponent,
     WindowControlsComponent,
   ],
   imports: [

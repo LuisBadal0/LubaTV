@@ -226,6 +226,18 @@ textarea {
   font-weight: 800;
 }
 
+.update-notes {
+  margin: 4px 20px 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--lt-surface-2);
+}
+
+.update-notes > b {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
 .about a {
   color: var(--lt-text-muted);
 }

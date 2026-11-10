@@ -1,0 +1,54 @@
+.notes h3 {
+  margin: 1.1rem 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.notes h3:first-child {
+  margin-top: 0;
+}
+
+.notes ul {
+  margin: 0 0 0.5rem;
+  padding-left: 1.2rem;
+}
+
+.notes li {
+  margin: 0.3rem 0;
+  line-height: 1.45;
+}
+
+.notes p {
+  margin: 0 0 0.5rem;
+}
+
+.notes code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--lt-surface-3);
+  color: var(--lt-text);
+  font-size: 0.9em;
+}
+
+/* Update prompt and Settings */
+.compact {
+  color: var(--lt-text-muted);
+  font-size: 0.78rem;
+}
+
+.compact h3 {
+  margin: 0.6rem 0 0.2rem;
+  color: var(--lt-text);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.compact ul {
+  padding-left: 1rem;
+}
+
+.compact li {
+  margin: 0.15rem 0;
+  line-height: 1.35;
+}

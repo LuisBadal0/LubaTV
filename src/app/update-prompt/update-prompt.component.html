@@ -37,6 +37,17 @@
         @case ('available') {
           <b>LubaTV {{ updates.version }} is available</b>
           <span>It installs in a few seconds and LubaTV restarts.</span>
+          @if (updates.notes) {
+            <button type="button" class="link-btn" (click)="showNotes = !showNotes"
+              [attr.aria-expanded]="showNotes">
+              {{ showNotes ? "Hide what's new" : "What's new" }}
+            </button>
+            @if (showNotes) {
+              <div class="notes-box">
+                <app-release-notes [notes]="updates.notes" [compact]="true" />
+              </div>
+            }
+          }
           <div class="actions">
             <button type="button" class="btn btn-primary btn-sm" (click)="updates.install()">Update now</button>
             <button type="button" class="btn btn-secondary btn-sm" (click)="updates.dismissed = true">Later</button>

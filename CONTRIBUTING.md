@@ -67,8 +67,13 @@ Releases are batched. When the maintainer decides to release, a separate pull re
 2. Bumps the version in all five places.
 3. Renames **Unreleased** to `[x.y.z] - YYYY-MM-DD` and adds a new, empty **Unreleased**
    above it.
-4. Rewrites the **What's new** window
-   (`src/app/whats-new-modal/whats-new-modal.component.html`) from that section.
+
+That section is all the release notes there are. The app shows it in two places:
+
+- **Update prompt and Settings:** CI writes the section into `latest.json`, so these show
+  it before updating.
+- **What's new** window after updating: `CHANGELOG.md` ships with the app, and the window
+  reads it from there.
 
 When it merges, CI publishes:
 

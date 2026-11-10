@@ -203,7 +203,9 @@ jobs:
 
           # latest.json tells installed copies about this version (the updater endpoint is
           # releases/latest/download/latest.json). It points at the update installers, which
-          # leave out the player files, and needs their signatures.
+          # leave out the player files, and needs their signatures. Its notes are the
+          # version's CHANGELOG.md section, which the update prompt shows as "What's new".
+          bash .github/scripts/release-notes.sh "${TAG#v}" > changes.md
           nsis=$(find installers -type f -name "*-update.exe" | head -1)
           msi=$(find installers -type f -name "*-update.msi" | head -1)
           extra=()
@@ -212,7 +214,7 @@ jobs:
             jq -n \
               --arg version "${TAG#v}" \
               --arg date "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-              --arg notes "See https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" \
+              --rawfile notes changes.md \
               --arg nsisUrl "$base/$(basename "$nsis")" --arg nsisSig "$(cat "$nsis.sig")" \
               --arg msiUrl "$base/$(basename "$msi")" --arg msiSig "$(cat "$msi.sig")" \
               '{version: $version, notes: $notes, pub_date: $date, platforms: {
@@ -226,7 +228,7 @@ jobs:
           fi
           # The version's CHANGELOG.md section, then how to install, then GitHub's
           # list of merged pull requests.
-          bash .github/scripts/release-notes.sh "${TAG#v}" > notes.md
+          cp changes.md notes.md
           cat >> notes.md <<'EOF'
 
           ## Install

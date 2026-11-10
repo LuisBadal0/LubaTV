@@ -1,0 +1,22 @@
+<div class="notes" [class.compact]="compact">
+  @for (block of blocks; track $index) {
+    @switch (block.kind) {
+      @case ("heading") {
+        <h3><ng-container *ngTemplateOutlet="line; context: { $implicit: block.text }" /></h3>
+      }
+      @case ("list") {
+        <ul>
+          @for (item of block.items; track $index) {
+            <li><ng-container *ngTemplateOutlet="line; context: { $implicit: item }" /></li>
+          }
+        </ul>
+      }
+      @default {
+        <p><ng-container *ngTemplateOutlet="line; context: { $implicit: block.text }" /></p>
+      }
+    }
+  }
+</div>
+
+<!-- One line, so no spaces appear between a styled word and the punctuation after it. -->
+<ng-template #line let-parts>@for (part of parts; track $index) {@if (part.bold) {<b>{{ part.text }}</b>} @else if (part.code) {<code>{{ part.text }}</code>} @else {{{ part.text }}}}</ng-template>

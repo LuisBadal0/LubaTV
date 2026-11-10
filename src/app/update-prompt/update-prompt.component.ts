@@ -13,6 +13,8 @@ import { PlayerFilesService } from "../player-files.service";
     standalone: false
 })
 export class UpdatePromptComponent {
+  /** The notes of the offered version, opened from "What's new". */
+  showNotes = false;
   constructor(
     public updates: UpdateService,
     public player: PlayerFilesService,

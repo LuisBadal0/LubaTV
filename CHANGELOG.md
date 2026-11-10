@@ -11,6 +11,14 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ## [Unreleased]
 
+### Added
+
+- When an update is available, **What's new** in the update prompt, and Settings → About, list what the new version changes.
+
+### Changed
+
+- The **What's new** window after an update shows the same notes as the GitHub release.
+
 ## [1.5.0] - 2026-11-10
 
 ### Added
