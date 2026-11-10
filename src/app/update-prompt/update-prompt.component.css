@@ -65,3 +65,34 @@ span {
   background: var(--lt-gradient);
   transition: width 0.2s ease;
 }
+
+.link-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lt-accent-light);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  color: var(--lt-text);
+}
+
+.link-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--lt-focus-ring);
+}
+
+.notes-box {
+  max-height: 260px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--lt-surface);
+  overflow-y: auto;
+}

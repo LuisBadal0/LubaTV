@@ -2,56 +2,14 @@
   <h4 class="modal-title lbl">What's new in LubaTV v{{ memory.AppVersion }}</h4>
 </div>
 <div class="modal-body">
-  <h3>A home screen made for big windows</h3>
-  <ul>
-    <li>Wider cards with bigger logos, and Continue watching shows larger cards</li>
-    <li>Your favorite categories appear as rows on the home screen</li>
-    <li>Live channels no longer carry a LIVE label, and the source name only shows when you have more than one</li>
-  </ul>
-  <h3>Favorite categories in the sidebar</h3>
-  <ul>
-    <li>Open a category and choose <b>Add to sidebar</b>, or right-click a category tile</li>
-    <li>Favorite categories stay after a source refresh</li>
-  </ul>
-  <h3>A channel list inside categories</h3>
-  <ul>
-    <li>Categories show their channels as a list, with a preview pane beside it</li>
-    <li>The pane shows the TV guide for Xtream channels, a Watch button and a favorite button</li>
-  </ul>
-  <h3>Search by country</h3>
-  <ul>
-    <li>Type a country code in capitals, such as <code>PT</code> or <code>US</code>, to see that country's categories and channels</li>
-    <li>Keep typing to search within that country. Backspace or the × removes the country</li>
-    <li>Typed in lowercase, a code searches names as before, and LubaTV offers the country as a suggestion</li>
-  </ul>
-  <h3>Better names for downloads and recordings</h3>
-  <ul>
-    <li>Files from addresses without an extension, such as <code>http://provider.com/live/123</code>, are saved as <code>.mp4</code> instead of getting a broken name</li>
-    <li>Addresses with something after the file name, such as <code>42.mkv?token=…</code>, keep their real extension</li>
-  </ul>
-  <h3>Much smaller updates</h3>
-  <ul>
-    <li>Updates now download about 10 MB instead of about 100 MB: they no longer include mpv, ffmpeg and yt-dlp</li>
-    <li>LubaTV downloads those only when a new version of one of them is out, and only the ones that changed</li>
-    <li>Each one is checked against its published checksum before it's used</li>
-  </ul>
-  <h3>A cleaner window</h3>
-  <ul>
-    <li>Minimize, maximize and close now sit in the window's top-right corner instead of a separate title bar, and close turns red when you point at it</li>
-    <li>The scrollbar starts below those buttons instead of running beside them</li>
-    <li>Drag the header or the logo to move the window, and double-click it to maximize</li>
-  </ul>
-  <h3>Faster channel switching</h3>
-  <ul>
-    <li>Picking another channel now switches the open player window instead of closing it and opening a new one</li>
-    <li>The window keeps its size, position, fullscreen and volume, and comes back to the front</li>
-    <li>Closing the player, or LubaTV, still closes it completely</li>
-  </ul>
-  <h3>Clearer playback errors</h3>
-  <ul>
-    <li>When a channel won't play, LubaTV says why, such as a refused login, an expired subscription or a server that's down, and what to try</li>
-    <li>A dead live channel gives up after about 15 seconds instead of a minute or more</li>
-  </ul>
+  @if (notes) {
+    <app-release-notes [notes]="notes" />
+  } @else if (loaded) {
+    <p>
+      This version's notes are on the
+      <a [href]="releaseUrl()" target="_blank">LubaTV releases page</a>.
+    </p>
+  }
 </div>
 <div class="modal-footer">
   <button class="btn btn-primary" (click)="close()">

@@ -42,18 +42,24 @@ Run these before saying a change is done, and report the results in the PR's **C
 
 Releases are batched, as the global rules describe: a user-facing PR adds a bullet under
 **Unreleased** in `CHANGELOG.md` and keeps the version. Only a release PR, made when the
-owner asks, bumps the version. A release PR here also:
+owner asks, bumps the version, in all five places. They must match; CI checks the first
+three:
 
-- bumps the version in all five places, which must match (CI checks the first three):
-  - `package.json`
-  - `src-tauri/Cargo.toml`
-  - `src-tauri/tauri.conf.json`
-  - the `lubatv` entry in `src-tauri/Cargo.lock`
-  - the top-level `version` fields in `package-lock.json`
-- rewrites the **What's new** window (`src/app/whats-new-modal/whats-new-modal.component.html`)
-  from the release's changelog section, with the newest release first.
+- `package.json`
+- `src-tauri/Cargo.toml`
+- `src-tauri/tauri.conf.json`
+- the `lubatv` entry in `src-tauri/Cargo.lock`
+- the top-level `version` fields in `package-lock.json`
 
-Merging it publishes GitHub release `v<version>`, the Windows updater files and the Docker
+`CHANGELOG.md` is the one place for release notes, so write its bullets for the people using
+the app. The app shows them:
+
+- **What's new** window after an update: the running version's section, from the copy of
+  `CHANGELOG.md` that ships with the app.
+- **Update prompt and Settings:** the offered version's section, which CI writes into
+  `latest.json`.
+
+Merging the release PR publishes GitHub release `v<version>`, the Windows updater files and the Docker
 image. The release notes come from `CHANGELOG.md` through `.github/scripts/release-notes.sh`.
 CI's **Check version** job fails when the current version has no dated section with
 bullets. Don't create tags or releases by hand. `CONTRIBUTING.md` has the full steps.

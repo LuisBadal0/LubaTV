@@ -1,6 +1,7 @@
 import { Injectable, NgZone } from "@angular/core";
 import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { hasChanges } from "./release-notes";
 
 export type UpdateState =
   | "idle"
@@ -24,6 +25,8 @@ export class UpdateService {
   state: UpdateState = "idle";
   /** The newer version, once found. */
   version?: string;
+  /** What's new in that version: its CHANGELOG.md section, from latest.json. */
+  notes?: string;
   /** Download progress, 0 to 100. */
   progress = 0;
   error?: string;
@@ -59,6 +62,8 @@ export class UpdateService {
       if (update) {
         this.update = update;
         this.version = update.version;
+        // Releases before 1.5.0 only link to GitHub; show notes that list changes.
+        this.notes = hasChanges(update.body) ? update.body : undefined;
         this.prompt = fromStartup;
         this.state = "available";
       } else {
