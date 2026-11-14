@@ -1006,6 +1006,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
    */
   async nav(key: string) {
     if (this.searchFocused()) return;
+    // Arrow keys move the caret in any other text box too, such as the category filter.
+    const typing = document.activeElement?.tagName;
+    if (typing == "INPUT" || typing == "TEXTAREA") return;
     if (this.memory.currentContextMenu?.menuOpen || this.memory.ModalRef) return;
     const area = this.focusArea;
     const count = this.areaCount(area);
