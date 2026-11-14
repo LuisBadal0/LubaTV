@@ -513,12 +513,10 @@ pub async fn get_epg(channel: Channel) -> Result<Vec<EPG>> {
     Ok(otv_epgs)
 }
 
+/// A programme is listed while it is on, still to come, or can be watched from the archive.
 fn is_valid_epg(epg: &EPG, now: &DateTime<Local>) -> Result<bool> {
     let epg_start_local = crate::utils::get_local_time(epg.start_timestamp)?;
-    if epg_start_local < *now && !epg.has_archive && !epg.now_playing {
-        return Ok(false);
-    }
-    Ok(true)
+    Ok(epg_start_local >= *now || epg.has_archive || epg.now_playing)
 }
 
 fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<EPG> {
