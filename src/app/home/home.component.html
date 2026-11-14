@@ -223,10 +223,11 @@
         }
       </div>
     } @else {
-      <div class="tile-grid main" [class.cats]="isCategoryGrid()" [@fade]="channelsVisible ? 'visible' : 'hidden'">
+      <div class="tile-grid main" [class.cats]="isCategoryGrid()" [class.posters]="posters"
+        [@fade]="channelsVisible ? 'visible' : 'hidden'">
         @for (channel of channels; track trackChannel(i, channel); let i = $index) {
           <app-channel-tile [attr.id]="i == 0 ? 'first' : null"
-            [id]="i" [channel]="channel"
+            [id]="i" [channel]="channel" [poster]="posters"
             [viewMode]="viewType" [preview]="previews[channel.id!]"></app-channel-tile>
         }
       </div>

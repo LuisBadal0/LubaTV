@@ -97,6 +97,8 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
   @Input() idPrefix = "tile-";
   /** Count and logos for a category tile. */
   @Input() preview?: GroupPreview;
+  /** Upright, like a poster: in a grid of movies and series only. */
+  @Input() poster = false;
   /** When this channel was last watched (Unix seconds), for the Continue watching row. */
   @Input() lastWatched?: number;
   @ViewChild(MatMenuTrigger, { static: true }) matMenuTrigger!: MatMenuTrigger;
@@ -182,6 +184,11 @@ export class ChannelTileComponent implements OnChanges, OnDestroy, AfterViewInit
       default:
         return "";
     }
+  }
+
+  /** A movie or series picture is a poster or a still and fills the tile; a channel's is a logo, shown whole. */
+  fillsPlate(): boolean {
+    return !!this.channel?.image && this.showImage && !this.isLivestream();
   }
 
   pick() {
