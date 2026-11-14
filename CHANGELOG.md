@@ -11,6 +11,8 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-14
+
 ### Added
 
 - The home screen opens with the last thing you watched, ready to start again. For a live channel with a TV guide it shows what is on now, how far along it is and what comes next.
