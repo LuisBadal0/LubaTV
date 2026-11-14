@@ -1,0 +1,51 @@
+<section class="spotlight" [class.poster]="!isLive()" aria-label="Pick up where you left off">
+  @if (channel.image && !imageBroken) {
+    <div class="art">
+      <img [src]="channel.image" alt="" (error)="imageBroken = true" />
+    </div>
+  }
+  <div class="text">
+    <p class="kicker">
+      @if (isLive()) {
+        <span class="live">LIVE</span>
+      }
+      @if (tag) {
+        <span class="cc">{{ tag }}</span>
+      }
+      {{ kicker() }}
+    </p>
+    <h2 [title]="channel.name">{{ name }}</h2>
+    @if (now; as programme) {
+      <p class="now">
+        {{ programme.title }}
+        @if (next; as after) {
+          · then {{ after.title }} at {{ endTime() }}
+        }
+      </p>
+      @if (progress(); as done) {
+        <div class="times">
+          <span>{{ startTime() }}</span>
+          <span class="bar" role="progressbar" [attr.aria-valuenow]="done" aria-valuemin="0" aria-valuemax="100"
+            aria-label="Programme progress"><span [style.width.%]="done"></span></span>
+          <span>{{ endTime() }}</span>
+        </div>
+      }
+    }
+    <div class="actions">
+      <button type="button" class="primary" (click)="play.emit()">
+        <app-icon name="play" />{{ action() }}
+      </button>
+      @if (hasGuide) {
+        <button type="button" class="secondary" (click)="openGuide()">TV guide</button>
+      }
+      @if (channel.media_type != mediaTypeEnum.serie) {
+        <button type="button" class="secondary round" [class.on]="channel.favorite" (click)="toggleFavorite()"
+          [attr.aria-pressed]="!!channel.favorite"
+          [attr.aria-label]="channel.favorite ? 'Remove from favorites' : 'Add to favorites'"
+          [title]="channel.favorite ? 'Remove from favorites' : 'Add to favorites'">
+          <app-icon name="star" />
+        </button>
+      }
+    </div>
+  </div>
+</section>

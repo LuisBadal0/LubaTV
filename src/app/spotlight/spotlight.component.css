@@ -1,0 +1,223 @@
+:host {
+  display: block;
+  margin-bottom: 24px;
+}
+
+.spotlight {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 232px;
+  border: 1px solid var(--lt-border);
+  border-radius: 20px;
+  background: var(--lt-bg-elevated);
+  overflow: hidden;
+}
+
+/* A channel logo sits whole on a soft glow; a movie or series poster fills the side. */
+.art {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 44%;
+  background: radial-gradient(60% 80% at 50% 50%, var(--lt-accent-soft), transparent 75%);
+}
+
+.art img {
+  max-width: 46%;
+  max-height: 56%;
+  object-fit: contain;
+}
+
+.poster .art {
+  width: 58%;
+  background: none;
+}
+
+.poster .art img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  object-position: center 25%;
+}
+
+.poster .art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--lt-bg-elevated) 0%, rgba(18, 20, 28, 0.72) 38%, rgba(18, 20, 28, 0.1) 100%);
+}
+
+.text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(560px, 62%);
+  padding: 28px 0 28px 36px;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--lt-text-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--lt-live);
+  color: var(--lt-on-light);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.live::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lt-on-light);
+}
+
+.cc {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--lt-surface-3);
+  color: var(--lt-text);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.now {
+  margin: 0;
+  color: #c9cde0;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.times {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #c9cde0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  display: flex;
+  flex: 0 1 300px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.bar span {
+  border-radius: 999px;
+  background: var(--lt-gradient-text);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 22px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary {
+  background: var(--lt-text);
+  color: var(--lt-on-light);
+}
+
+.primary:hover {
+  background: #fff;
+}
+
+.secondary {
+  border-color: var(--lt-border-strong);
+  background: rgba(10, 11, 16, 0.55);
+  color: var(--lt-text);
+  font-weight: 700;
+}
+
+.secondary:hover {
+  border-color: var(--lt-border-hover);
+}
+
+.round {
+  width: 44px;
+  padding: 0;
+  color: var(--lt-text-muted);
+}
+
+.round.on {
+  color: var(--lt-favorite);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--lt-focus-ring);
+}
+
+/* Narrow windows: the text alone. */
+@media (max-width: 899px) {
+  .art {
+    display: none;
+  }
+
+  .text {
+    width: 100%;
+    padding: 22px 24px;
+  }
+
+  h2 {
+    font-size: 2rem;
+  }
+}

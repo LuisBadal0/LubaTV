@@ -110,6 +110,8 @@
     }
 
     @if (showRecent()) {
+      <app-spotlight [channel]="recent[0]" [lastWatched]="lastWatched[recent[0].id!]"
+        [hasGuide]="hasGuide(recent[0])" (play)="playSpotlight()"></app-spotlight>
       <section class="recent">
         <div class="section-head">
           <h2>Continue watching</h2>
