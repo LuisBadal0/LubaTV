@@ -64,7 +64,7 @@
   padding: 8px 2px 2px;
 }
 
-.hover-play {
+.play-btn.hover-play {
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -75,13 +75,13 @@
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
 }
 
-.tile.art:hover .hover-play,
-.tile.art:focus-visible .hover-play {
+.tile.art:hover .play-btn.hover-play,
+.tile.art:focus-visible .play-btn.hover-play {
   display: grid;
 }
 
-.playing .hover-play {
-  display: none !important;
+.tile.playing .play-btn.hover-play {
+  display: none;
 }
 
 /* A poster or a still fills its tile. */
