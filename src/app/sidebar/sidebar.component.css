@@ -1,5 +1,6 @@
 /*
  * A column of icons that opens into a menu while the pointer or the keyboard focus is in it.
+ * Focus left behind by a click doesn't count, or the menu would stay open after choosing a view.
  * The open menu lies over the page. Pinned (wide windows only), it stays open and the page
  * makes room for it instead: see --lt-sidebar-width in styles.css.
  */
@@ -27,7 +28,7 @@
 }
 
 .side:hover,
-.side:focus-within {
+.side:has(:focus-visible) {
   --row-width: calc(var(--lt-menu-width) - 25px);
   --reveal: 1;
   /* Crossing the column on the way elsewhere doesn't open it. */

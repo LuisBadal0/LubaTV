@@ -40,6 +40,8 @@ export class SpotlightComponent implements OnChanges {
   guide: EPG[] = [];
   now?: EPG;
   next?: EPG;
+  /** The channel the guide was last asked for, so a reload of the same one doesn't ask again. */
+  private guideFor?: number;
 
   constructor(
     private memory: MemoryService,
@@ -54,7 +56,8 @@ export class SpotlightComponent implements OnChanges {
     this.name = rest;
     this.tag = code;
     this.imageBroken = false;
-    this.loadGuide();
+    // Home reloads often and hands over a new object each time; the guide comes from the provider.
+    if (this.channel?.id !== this.guideFor) this.loadGuide();
   }
 
   isLive(): boolean {
@@ -104,13 +107,14 @@ export class SpotlightComponent implements OnChanges {
 
   private async loadGuide() {
     const channel = this.channel;
+    this.guideFor = channel?.id;
     this.guide = [];
     this.now = undefined;
     this.next = undefined;
     if (!channel || !this.hasGuide) return;
     try {
       const guide: EPG[] = await invoke("get_epg", { channel });
-      if (this.channel !== channel || !Array.isArray(guide)) return;
+      if (this.channel?.id !== channel.id || !Array.isArray(guide)) return;
       this.guide = guide;
       const index = guide.findIndex((epg) => epg.now_playing);
       if (index != -1) {
