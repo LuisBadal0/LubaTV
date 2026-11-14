@@ -17,6 +17,8 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ### Changed
 
+- Channels, movies and series are picture-first tiles: the name sits under the picture, and pointing at a tile rings it and shows a play button.
+- Movie and series pictures fill their tile instead of sitting small in the middle. With **Live TV** switched off, the grid becomes a wall of upright posters.
 - The sidebar is now a narrow column of icons, which leaves more room for channels. Point at it, or reach it with the keyboard, and it opens into the full menu with your views, favorite categories and sources. The pin at the top of the menu keeps it open, as before.
 - Sources in the menu show their type, and **Manage** opens them in Settings.
 

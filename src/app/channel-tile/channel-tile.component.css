@@ -30,6 +30,81 @@
   opacity: 0.45;
 }
 
+/*
+ * Channels, movies and series: the picture is the card, with the name under it. The pointer
+ * or the keyboard focus draws a ring around the picture and shows a play button.
+ */
+.tile.art {
+  overflow: visible;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+}
+
+.tile.art:focus,
+.tile.art:focus-visible {
+  box-shadow: none;
+}
+
+.art .plate,
+.art .wide-plate {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tile.art:hover .plate,
+.tile.art:hover .wide-plate,
+.tile.art:focus .plate,
+.tile.art:focus .wide-plate {
+  outline: 2px solid var(--lt-accent-light);
+  outline-offset: 3px;
+}
+
+.art .meta {
+  padding: 8px 2px 2px;
+}
+
+.play-btn.hover-play {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: none;
+  width: 44px;
+  height: 44px;
+  margin: auto;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.tile.art:hover .play-btn.hover-play,
+.tile.art:focus-visible .play-btn.hover-play {
+  display: grid;
+}
+
+.tile.playing .play-btn.hover-play {
+  display: none;
+}
+
+/* A poster or a still fills its tile. */
+.cover .logo-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+}
+
+.cover .badge,
+.cover .tag {
+  z-index: 1;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.poster .plate {
+  aspect-ratio: 2 / 3;
+}
+
 /* Logo panel */
 .plate {
   position: relative;
@@ -300,12 +375,6 @@
   place-items: center;
   aspect-ratio: 16 / 9;
   background: radial-gradient(90% 110% at 30% 20%, var(--tint-strong), transparent 70%), var(--lt-surface-2);
-}
-
-.wide-plate .play-btn {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
 }
 
 .playing .wide-plate::after {

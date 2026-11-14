@@ -133,6 +133,8 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
   previewItem?: Channel;
   previewIndex = 0;
   previewEpg: EPG[] = [];
+  /** The grid shows upright posters instead of wide tiles. */
+  posters = false;
   private epgTimer?: ReturnType<typeof setTimeout>;
   private scrollFrame = 0;
 
@@ -430,6 +432,7 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
         this.channelsVisible = true;
         // prevent flicker of hiding opacity
         this.viewType = this.filters!.view_type;
+        this.posters = this.wantsPosters();
       } else {
         this.channels = this.channels.concat(channels);
       }
@@ -448,6 +451,18 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
       this.error.handleError(e);
     }
     this.loading = false;
+  }
+
+  /** With Live TV switched off the grid holds movies and series, whose pictures are posters. */
+  private wantsPosters(): boolean {
+    const f = this.filters;
+    return (
+      !!f &&
+      !f.media_types.includes(MediaType.livestream) &&
+      f.view_type != ViewMode.Categories &&
+      !f.group_id &&
+      !f.series_id
+    );
   }
 
   /** The Continue watching row belongs on the unfiltered All view. */

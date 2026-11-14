@@ -1,5 +1,6 @@
 <div [attr.id]="idPrefix + id" tabindex="0" class="tile" [class.wide]="variant === 'wide'"
-  [class.row]="variant === 'row'" [class.category]="isGroup()" [class.selected]="selected"
+  [class.row]="variant === 'row'" [class.category]="isGroup()" [class.art]="variant !== 'row' && !isGroup()"
+  [class.poster]="poster && variant === 'card' && !isGroup()" [class.selected]="selected"
   [class.playing]="starting" [class.faded]="fade" [ngbTooltip]="tooltip" #tip="ngbTooltip" triggers="manual"
   placement="top" container="body" (mouseenter)="hoverTip(tip); pick()" (mouseleave)="hideTip(tip)"
   (focus)="focusTip($event, tip); pick()" (blur)="hideTip(tip)" (click)="click()" (keyup.enter)="click()"
@@ -7,7 +8,7 @@
 
   <!-- Continue watching -->
   @if (variant === 'wide') {
-    <div class="wide-plate" [attr.style]="tintStyle">
+    <div class="wide-plate" [class.cover]="fillsPlate()" [attr.style]="tintStyle">
       @if (channel?.image && showImage) {
         <img class="logo-img" (error)="showImage = false" loading="lazy" decoding="async"
           [src]="channel?.image" alt="" />
@@ -18,7 +19,7 @@
       @if (starting) {
         <span class="eq"><span></span><span></span><span></span><span></span></span>
       }
-      <span class="play-btn"><app-icon name="play" /></span>
+      <span class="play-btn hover-play"><app-icon name="play" /></span>
     </div>
     <div class="meta">
       <div class="nm one-line">{{ displayName }}</div>
@@ -82,7 +83,7 @@
 
   <!-- Channel, movie, series, season -->
   @if (variant === 'card' && !isGroup()) {
-    <div class="plate" [attr.style]="tintStyle">
+    <div class="plate" [class.cover]="fillsPlate()" [attr.style]="tintStyle">
       @if (!isLivestream()) {
         <span class="badge">{{ badgeText() }}</span>
       }
@@ -99,6 +100,7 @@
       @if (starting) {
         <span class="eq"><span></span><span></span><span></span><span></span></span>
       }
+      <span class="play-btn hover-play"><app-icon name="play" /></span>
     </div>
     <div class="meta">
       <div class="nm">{{ displayName }}</div>
