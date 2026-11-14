@@ -593,6 +593,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     document.getElementById(`tile-${this.previewIndex}`)?.click();
   }
 
+  /** Starts the banner's item through its tile in Continue watching, for the same reason. */
+  playSpotlight() {
+    document.getElementById("recent-0")?.click();
+  }
+
   previewAction(): string {
     switch (this.previewItem?.media_type) {
       case MediaType.serie:
