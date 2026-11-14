@@ -171,7 +171,10 @@
     }
 
     @if (isChannelList()) {
+      <div class="list-wrap">
       <div class="list-layout">
+        <app-category-pane class="cat-pane" [filters]="filters" [reloadKey]="categoryPaneKey()"
+          [activeId]="openCategory()?.id" (open)="openFavoriteCategory($event)"></app-category-pane>
         <div class="tile-grid main list" [@fade]="channelsVisible ? 'visible' : 'hidden'">
           @for (channel of channels; track trackChannel(i, channel); let i = $index) {
             <app-channel-tile [attr.id]="i == 0 ? 'first' : null" variant="row"
@@ -221,6 +224,7 @@
             }
           </aside>
         }
+      </div>
       </div>
     } @else {
       <div class="tile-grid main" [class.cats]="isCategoryGrid()" [class.posters]="posters"

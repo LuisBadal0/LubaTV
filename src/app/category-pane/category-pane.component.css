@@ -1,0 +1,185 @@
+:host {
+  min-width: 0;
+}
+
+.pane {
+  position: sticky;
+  top: 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: calc(100vh - 120px);
+  padding: 12px 8px;
+  border: 1px solid var(--lt-border);
+  border-radius: var(--lt-radius-lg);
+  background: var(--lt-bg-elevated);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.filter {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  margin: 0 4px 4px;
+  padding: 0 10px;
+  border: 1px solid var(--lt-border);
+  border-radius: 10px;
+  background: var(--lt-surface);
+  color: var(--lt-text-muted);
+}
+
+.filter:focus-within {
+  border-color: var(--lt-accent);
+  box-shadow: var(--lt-focus-ring);
+}
+
+.filter input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lt-text);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.filter input::placeholder {
+  color: var(--lt-text-muted);
+}
+
+.sect {
+  margin: 0;
+  padding: 12px 12px 6px;
+  color: var(--lt-text-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  border-radius: 10px;
+}
+
+.row:hover {
+  background: var(--lt-surface);
+}
+
+.row.on {
+  background: var(--lt-accent-soft);
+}
+
+.name {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 0 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: #c9cde0;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row.on .name {
+  color: #fff;
+  font-weight: 800;
+}
+
+.label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc {
+  flex: 0 0 auto;
+  min-width: 28px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  background: var(--lt-surface-3);
+  color: var(--lt-text);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+/* The star shows on the row under the pointer, and always on a favorite. */
+.pin {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--lt-text-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pin app-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.row:hover .pin,
+.pin:focus-visible,
+.pin.on {
+  opacity: 1;
+}
+
+.pin.on {
+  color: var(--lt-favorite);
+}
+
+.name:focus-visible,
+.pin:focus-visible,
+.more:focus-visible {
+  outline: none;
+  box-shadow: inset var(--lt-focus-ring);
+}
+
+.none {
+  margin: 0;
+  padding: 6px 12px;
+  color: var(--lt-text-muted);
+  font-size: 0.82rem;
+}
+
+.more {
+  flex: 0 0 auto;
+  height: 40px;
+  margin: 6px 4px 0;
+  border: 1px solid var(--lt-border-strong);
+  border-radius: 10px;
+  background: none;
+  color: var(--lt-text);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.more:hover {
+  border-color: var(--lt-border-hover);
+}

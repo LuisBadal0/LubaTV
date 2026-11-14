@@ -15,6 +15,8 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 - The home screen opens with the last thing you watched, ready to start again. For a live channel with a TV guide it shows what is on now, how far along it is and what comes next.
 
+- With a category open in a wide window, the other categories are listed on the left: favorites first, a box to filter them by name, and a star on each to add it to the sidebar. Choosing one switches category without going back.
+
 ### Changed
 
 - Channels, movies and series are picture-first tiles: the name sits under the picture, and pointing at a tile rings it and shows a play button.

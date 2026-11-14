@@ -496,6 +496,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     return !!this.filters?.group_id && !this.filters?.series_id;
   }
 
+  /** The category list beside an open category loads again when this changes. */
+  categoryPaneKey(): string {
+    return `${this.filters?.media_types.join()}|${Array.from(this.memory.Sources.keys()).join()}`;
+  }
+
   /** The open category, when the page shows one. */
   openCategory(): Node | undefined {
     const node = this.nodeStack.get();
