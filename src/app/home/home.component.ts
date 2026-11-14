@@ -496,6 +496,11 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     return !!this.filters?.group_id && !this.filters?.series_id;
   }
 
+  /** The category list beside an open category loads again when this changes. */
+  categoryPaneKey(): string {
+    return `${this.filters?.media_types.join()}|${Array.from(this.memory.Sources.keys()).join()}`;
+  }
+
   /** The open category, when the page shows one. */
   openCategory(): Node | undefined {
     const node = this.nodeStack.get();
@@ -1001,6 +1006,9 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
    */
   async nav(key: string) {
     if (this.searchFocused()) return;
+    // Arrow keys move the caret in any other text box too, such as the category filter.
+    const typing = document.activeElement?.tagName;
+    if (typing == "INPUT" || typing == "TEXTAREA") return;
     if (this.memory.currentContextMenu?.menuOpen || this.memory.ModalRef) return;
     const area = this.focusArea;
     const count = this.areaCount(area);

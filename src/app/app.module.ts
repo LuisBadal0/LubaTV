@@ -35,6 +35,7 @@ import { LegacyDataModalComponent } from './legacy-data-modal/legacy-data-modal.
 import { IconComponent } from './icon/icon.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { SpotlightComponent } from './spotlight/spotlight.component';
+import { CategoryPaneComponent } from './category-pane/category-pane.component';
 import { UpdatePromptComponent } from './update-prompt/update-prompt.component';
 import { ReleaseNotesComponent } from './release-notes/release-notes.component';
 import { WhatsNewModalComponent } from './whats-new-modal/whats-new-modal.component';
@@ -74,6 +75,7 @@ import { TimeUntilPipe } from './pipes/time-until.pipe';
     IconComponent,
     SidebarComponent,
     SpotlightComponent,
+    CategoryPaneComponent,
     UpdatePromptComponent,
     ReleaseNotesComponent,
     WhatsNewModalComponent,

@@ -1,0 +1,48 @@
+<ng-template #row let-group let-pinned="pinned">
+  <div class="cat-row" [class.on]="group.id === activeId">
+    <button type="button" class="name" (click)="open.emit(group)" [title]="group.name"
+      [attr.aria-current]="group.id === activeId ? 'true' : null">
+      @if (label(group).code; as code) {
+        <span class="cc">{{ code }}</span>
+      }
+      <span class="label">{{ label(group).rest }}</span>
+    </button>
+    <button type="button" class="pin" [class.on]="pinned" (click)="memory.toggleFavoriteGroup(group)"
+      [attr.aria-label]="(pinned ? 'Remove from the sidebar: ' : 'Add to the sidebar: ') + group.name"
+      [title]="pinned ? 'Remove from the sidebar' : 'Add to the sidebar'">
+      <app-icon [name]="pinned ? 'star' : 'starOff'" />
+    </button>
+  </div>
+</ng-template>
+
+<aside class="pane" aria-label="Categories">
+  <label class="filter">
+    <app-icon name="search" />
+    <input #box type="text" autocomplete="off" placeholder="Filter categories" aria-label="Filter categories"
+      (input)="onQuery(box.value)" (keydown.escape)="$event.stopPropagation(); clearQuery(box)"
+      (keydown.backspace)="$event.stopPropagation()" />
+  </label>
+
+  @if (!query) {
+    @if (memory.FavoriteGroups | async; as favorites) {
+      @if (favorites.length) {
+        <p class="sect">Favorites</p>
+        @for (group of favorites; track group.id) {
+          <ng-container *ngTemplateOutlet="row; context: { $implicit: group, pinned: true }"></ng-container>
+        }
+      }
+    }
+  }
+
+  <p class="sect">{{ query ? "Matches" : "All categories" }}</p>
+  @for (group of listed(); track group.id) {
+    <ng-container
+      *ngTemplateOutlet="row; context: { $implicit: group, pinned: memory.isFavoriteGroup(group.id) }"></ng-container>
+  }
+  @if (!loading && !listed().length) {
+    <p class="none">{{ query ? "No category has that name." : "No other categories." }}</p>
+  }
+  @if (!reachedEnd) {
+    <button type="button" class="more" (click)="load(true)">Show more</button>
+  }
+</aside>
