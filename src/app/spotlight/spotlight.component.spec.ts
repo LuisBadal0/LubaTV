@@ -49,6 +49,28 @@ describe("SpotlightComponent", () => {
     expect(page.querySelector(".primary")?.textContent).toContain("Watch");
   });
 
+  it("doesn't ask for the guide again when home reloads the same channel", async () => {
+    let asked = 0;
+    const channel: Channel = { id: 1, name: "PT: Made-up Sport", media_type: MediaType.livestream, source_id: 1 };
+    const fixture = await render(channel, true, {
+      get get_epg() {
+        asked++;
+        return guide;
+      },
+    });
+    expect(asked).toBe(1);
+    fixture.componentRef.setInput("channel", { ...channel });
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(asked).toBe(1);
+    expect((fixture.nativeElement as HTMLElement).querySelector(".now")?.textContent).toContain("Made-up match");
+
+    fixture.componentRef.setInput("channel", { ...channel, id: 9 });
+    fixture.detectChanges();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(asked).toBe(2);
+  });
+
   it("offers a movie to play, with no guide", async () => {
     const fixture = await render({ id: 2, name: "Made-up Movie", media_type: MediaType.movie, source_id: 1 });
     const page = fixture.nativeElement as HTMLElement;
