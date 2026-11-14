@@ -41,7 +41,11 @@
   --lt-danger: #ef4444;
   --lt-favorite: #fbbf24;
 
-  --lt-sidebar-width: 216px;
+  /* The menu: a column of icons that opens over the page (sidebar.component). */
+  --lt-rail-width: 72px;
+  --lt-menu-width: 264px;
+  /* The room pages leave for it. */
+  --lt-sidebar-width: var(--lt-rail-width);
   /* Minimize, maximize and close in the top-right corner (window-controls). */
   --lt-window-control-width: 46px;
   --lt-window-controls-height: 32px;
@@ -67,9 +71,10 @@
   color-scheme: dark;
 }
 
-@media (max-width: 899px) {
-  :root {
-    --lt-sidebar-width: 64px;
+/* Kept open (the pin in the menu), it stands beside the page. Narrow windows have no room for that. */
+@media (min-width: 900px) {
+  :root.lt-menu-pinned {
+    --lt-sidebar-width: var(--lt-menu-width);
   }
 }
 

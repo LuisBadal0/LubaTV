@@ -1,7 +1,12 @@
-<aside class="side">
+<aside class="side" [class.pinned]="pinned">
   <div class="brand" data-tauri-drag-region>
     <img src="assets/brand/lubatv-icon.svg" alt="" data-tauri-drag-region />
-    <span class="brand-name" data-tauri-drag-region>Luba<em data-tauri-drag-region>TV</em></span>
+    <span class="brand-name reveal" data-tauri-drag-region>Luba<em data-tauri-drag-region>TV</em></span>
+    <button type="button" class="pin-btn reveal" [class.on]="pinned" (click)="togglePinned()"
+      [attr.aria-pressed]="pinned" [title]="pinned ? 'Let the menu close' : 'Keep the menu open'"
+      [attr.aria-label]="pinned ? 'Let the menu close' : 'Keep the menu open'">
+      <app-icon [name]="pinned ? 'pinOff' : 'pin'" />
+    </button>
   </div>
 
   <nav class="nav" aria-label="Views">
@@ -9,35 +14,41 @@
       <button type="button" [id]="'viewMode-' + i" class="nav-item"
         [class.on]="active === item.view" (click)="choose(item.view)" [title]="item.label">
         <app-icon [name]="item.icon" />
-        <span class="label">{{ item.label }}</span>
+        <span class="label reveal">{{ item.label }}</span>
       </button>
     }
   </nav>
 
   @if (memory.FavoriteGroups | async; as favorites) {
     @if (favorites.length) {
-      <div class="sect">Favorite categories</div>
+      <div class="sect reveal">Favorite categories</div>
       @for (group of favorites; track group.id) {
         <button type="button" class="src fav-cat" [class.on]="activeCategory === group.id"
           (click)="openCategory(group)" [title]="group.name">
-          @if (categoryLabel(group).code; as code) {
-            <span class="cc">{{ code }}</span>
-          } @else {
-            <app-icon name="star" class="cat-star" />
-          }
-          <span class="label">{{ categoryLabel(group).rest }}</span>
+          <span class="lead">
+            @if (categoryLabel(group).code; as code) {
+              <span class="cc">{{ code }}</span>
+            } @else {
+              <app-icon name="star" class="cat-star" />
+            }
+          </span>
+          <span class="label reveal">{{ categoryLabel(group).rest }}</span>
         </button>
       }
     }
   }
 
   @if (sources.length) {
-    <div class="sect">Sources</div>
+    <div class="sect reveal">
+      <span>Sources</span>
+      <button type="button" class="manage" (click)="openSettings('sources')">Manage</button>
+    </div>
     @for (source of sources; track source) {
       <button type="button" class="src" (click)="openSettings('sources')"
         [title]="source.name + ' · ' + sourceKind(source)">
-        <span class="dot" [style.background]="sourceColor(source.id)"></span>
-        <span class="label">{{ source.name }}</span>
+        <span class="lead"><span class="dot" [style.background]="sourceColor(source.id)"></span></span>
+        <span class="label reveal">{{ source.name }}</span>
+        <span class="kind reveal">{{ sourceKind(source) }}</span>
       </button>
     }
   }
@@ -45,7 +56,7 @@
   <div class="foot">
     <button type="button" class="nav-item" [class.on]="active === 'settings'" (click)="openSettings()" title="Settings">
       <app-icon name="cog" />
-      <span class="label">Settings</span>
+      <span class="label reveal">Settings</span>
     </button>
   </div>
 </aside>
