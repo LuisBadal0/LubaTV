@@ -11,6 +11,11 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ## [Unreleased]
 
+### Changed
+
+- The sidebar is now a narrow column of icons, which leaves more room for channels. Point at it, or reach it with the keyboard, and it opens into the full menu with your views, favorite categories and sources. The pin at the top of the menu keeps it open, as before.
+- Sources in the menu show their type, and **Manage** opens them in Settings.
+
 ## [1.6.0] - 2026-11-10
 
 ### Added

@@ -6,6 +6,7 @@ import { Source } from "../models/source";
 import { SourceType } from "../models/sourceType";
 import { Channel } from "../models/channel";
 import { splitCountryPrefix } from "../countries";
+import { applyMenuPinned, isMenuPinned, setMenuPinned } from "./menu-pin";
 
 /** Sidebar order; the index is also the keyboard focus id (`viewMode-<index>`). */
 export const SIDEBAR_VIEWS: { view: ViewMode; icon: string; label: string }[] = [
@@ -38,11 +39,20 @@ export class SidebarComponent {
 
   readonly views = SIDEBAR_VIEWS;
   readonly sourceColor = sourceColor;
+  /** Kept open, with the page beside it, instead of opening over the page on hover. */
+  pinned = isMenuPinned();
 
   constructor(
     public memory: MemoryService,
     private router: Router,
-  ) {}
+  ) {
+    applyMenuPinned(this.pinned);
+  }
+
+  togglePinned() {
+    this.pinned = !this.pinned;
+    setMenuPinned(this.pinned);
+  }
 
   get sources(): Source[] {
     return Array.from(this.memory.Sources.values());
