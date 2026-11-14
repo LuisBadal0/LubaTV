@@ -63,18 +63,18 @@
   text-transform: uppercase;
 }
 
-.row {
+.cat-row {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
   border-radius: 10px;
 }
 
-.row:hover {
+.cat-row:hover {
   background: var(--lt-surface);
 }
 
-.row.on {
+.cat-row.on {
   background: var(--lt-accent-soft);
 }
 
@@ -97,7 +97,7 @@
   cursor: pointer;
 }
 
-.row.on .name {
+.cat-row.on .name {
   color: #fff;
   font-weight: 800;
 }
@@ -142,7 +142,7 @@
   height: 16px;
 }
 
-.row:hover .pin,
+.cat-row:hover .pin,
 .pin:focus-visible,
 .pin.on {
   opacity: 1;

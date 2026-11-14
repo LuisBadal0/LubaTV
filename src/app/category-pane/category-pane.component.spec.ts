@@ -45,8 +45,8 @@ describe("CategoryPaneComponent", () => {
   it("lists the categories, with the open one marked", async () => {
     const page = (await render()).nativeElement as HTMLElement;
     expect(names(page)).toEqual(["Made-up Sports", "Made-up News"]);
-    expect(page.querySelector(".row.on .label")?.textContent).toBe("Made-up Sports");
-    expect(page.querySelector(".row.on .cc")?.textContent).toBe("PT");
+    expect(page.querySelector(".cat-row.on .label")?.textContent).toBe("Made-up Sports");
+    expect(page.querySelector(".cat-row.on .cc")?.textContent).toBe("PT");
     expect(page.querySelector(".more")).toBeNull();
   });
 
@@ -55,7 +55,7 @@ describe("CategoryPaneComponent", () => {
     expect(names(page)).toEqual(["Made-up News", "Made-up Sports"]);
     const sections = Array.from(page.querySelectorAll(".sect")).map((sect) => sect.textContent);
     expect(sections).toEqual(["Favorites", "All categories"]);
-    expect(page.querySelector(".row .pin.on")).not.toBeNull();
+    expect(page.querySelector(".cat-row .pin.on")).not.toBeNull();
   });
 
   it("asks home to open the chosen category", async () => {

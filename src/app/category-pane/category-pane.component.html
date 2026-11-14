@@ -1,5 +1,5 @@
 <ng-template #row let-group let-pinned="pinned">
-  <div class="row" [class.on]="group.id === activeId">
+  <div class="cat-row" [class.on]="group.id === activeId">
     <button type="button" class="name" (click)="open.emit(group)" [title]="group.name"
       [attr.aria-current]="group.id === activeId ? 'true' : null">
       @if (label(group).code; as code) {
