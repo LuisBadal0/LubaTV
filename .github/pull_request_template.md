@@ -11,8 +11,17 @@
 - [ ] `npm run test:ci`
 - [ ] `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` in `src-tauri`
 - [ ] Bullet under **Unreleased** in `CHANGELOG.md` (if users will notice the change)
-- Tried in the app:
+- Tried in the app (the `verify` skill, or by hand):
+- Reviewed with `/code-review` (and `/security-review` for credentials, network, SQL, updater or CI):
 - Not tested:
+- Risk: <!-- low, medium or high, and what could break. High: updater, signing key, CI workflows, player files, SQL, credentials. -->
+- To undo: <!-- usually "revert this PR"; say if data or settings need more (a migration, a changed file format). -->
+
+<!--
+Every review finding gets an answer: fixed, or a reason it stays.
+The verify skill only covers M3U sources on Windows: say what you checked for anything else,
+such as Xtream, the TV guide or Linux.
+-->
 
 ## Version
 

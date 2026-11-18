@@ -59,8 +59,11 @@ real IPTV accounts or playlists: use made-up addresses and fixtures.
   lowercase and hyphenated. One focused change per branch.
 - Open a pull request against `main` of `LuisBadal0/LubaTV`. This repository is a fork, so pass
   `-R LuisBadal0/LubaTV --base main` to `gh pr create`.
-- Fill in the template: **Changes**, **Checks** and **Version**. CI must pass. Pull requests
-  are squash-merged.
+- Fill in the template: **Changes**, **Checks** (including the risk and how to undo the
+  change) and **Version**. CI must pass: `main` only accepts a merge once **Check version** and
+  both **build** jobs succeed. Pull requests are squash-merged.
+- [REVIEW.md](REVIEW.md) lists what reviewers look for here, such as credentials in logs and
+  SQL built from values.
 - If users will notice the change, add a bullet under **Unreleased** in
   [CHANGELOG.md](CHANGELOG.md), written for them, under **Added**, **Changed**, **Fixed** or
   **Removed**. Leave the version alone.
