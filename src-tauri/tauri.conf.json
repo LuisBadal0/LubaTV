@@ -1,6 +1,6 @@
 {
   "productName": "LubaTV",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "identifier": "dev.luisbadalo.lubatv",
   "build": {
     "frontendDist": "../dist/lubatv/browser",
