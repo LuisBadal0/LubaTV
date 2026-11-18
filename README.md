@@ -122,6 +122,8 @@ cargo test            # add -- --ignored for the tests that need mpv or download
 
 CI runs all of them on every pull request. Without Chrome, point `CHROME_BIN` at another Chromium browser, such as Edge.
 
+To try a change in the app without touching your library (Windows), run `pwsh -File scripts/verify/start.ps1 -Fresh`: it uses a temporary data folder and a made-up playlist. [CONTRIBUTING.md](CONTRIBUTING.md) has the details.
+
 ### Releasing
 
 Every merge to `main` builds the Windows installers and Linux packages. Releases are batched:

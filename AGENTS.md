@@ -20,6 +20,12 @@ This file adds what is specific to this repository.
 | `npm run tauri dev` | Run the app with live reload |
 | `npm run build` | Build the packages for this platform |
 | `npm run build:windows` | Windows installers with the player files included |
+| `pwsh -File scripts/verify/start.ps1 -Fresh` | Run the app with its own data folder and a made-up playlist, for checks |
+
+`npm run tauri dev` uses the real library and providers. To see a change working, use the
+`verify` skill (`.claude/skills/verify/SKILL.md`) instead: it starts the app isolated through
+`LUBATV_HOME`, drives the window with `scripts/verify/drive.mjs` and checks what mpv plays.
+Run it before committing a change users would notice, and report what it showed in **Checks**.
 
 ## Test
 

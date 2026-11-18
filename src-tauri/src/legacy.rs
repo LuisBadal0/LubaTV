@@ -4,7 +4,10 @@
 //! carry over. The user is then asked once whether to delete the old folders or keep them
 //! (the old app needs them if it is still in use).
 
-use crate::{sql, utils::project_dirs};
+use crate::{
+    sql,
+    utils::{isolated_home, project_dirs},
+};
 use anyhow::{Context, Result};
 use directories::{BaseDirs, ProjectDirs};
 use serde::Serialize;
@@ -20,8 +23,17 @@ fn legacy_dirs() -> Option<ProjectDirs> {
     ProjectDirs::from("dev", "fredol", LEGACY_NAME)
 }
 
+/// A run with `LUBATV_HOME` set leaves the old app's data alone: it neither copies it in nor
+/// offers to delete it.
+fn ignore_legacy() -> bool {
+    isolated_home().is_some()
+}
+
 /// Copies the old database into LubaTV's data folder on the first start.
 pub fn migrate() -> Result<()> {
+    if ignore_legacy() {
+        return Ok(());
+    }
     let data_dir = project_dirs()?.data_dir().to_owned();
     let Some(legacy) = legacy_dirs() else {
         return Ok(());
@@ -63,7 +75,7 @@ pub struct LegacyData {
 
 /// The old folders still on disk, if the user has not decided about them yet.
 pub fn pending() -> Result<Option<LegacyData>> {
-    if decided_marker()?.exists() {
+    if ignore_legacy() || decided_marker()?.exists() {
         return Ok(None);
     }
     let folders = existing_folders();
@@ -83,7 +95,7 @@ pub fn pending() -> Result<Option<LegacyData>> {
 /// If deleting fails (for example because the old app is still running), nothing is
 /// recorded, so the user is asked again on the next start.
 pub fn resolve(delete: bool) -> Result<()> {
-    if delete {
+    if delete && !ignore_legacy() {
         for folder in existing_folders() {
             std::fs::remove_dir_all(&folder).with_context(|| {
                 format!(

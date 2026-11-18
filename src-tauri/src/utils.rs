@@ -361,9 +361,57 @@ pub fn create_nuke_request() -> Result<()> {
     std::process::exit(0);
 }
 
+/// Set to a folder to keep LubaTV's database, cache, logs and player files there instead of
+/// in the user's folders, so a development run never touches a real library.
+pub const HOME_ENV: &str = "LUBATV_HOME";
+
 /// LubaTV's data, cache and log folders.
-pub fn project_dirs() -> Result<ProjectDirs> {
-    ProjectDirs::from("dev", "luisbadalo", "lubatv").context("project dir not found")
+pub struct Dirs {
+    data: PathBuf,
+    data_local: PathBuf,
+    cache: PathBuf,
+}
+
+impl Dirs {
+    fn under(home: &Path) -> Self {
+        Self {
+            data: home.join("data"),
+            data_local: home.join("local"),
+            cache: home.join("cache"),
+        }
+    }
+
+    pub fn data_dir(&self) -> &Path {
+        &self.data
+    }
+
+    pub fn data_local_dir(&self) -> &Path {
+        &self.data_local
+    }
+
+    pub fn cache_dir(&self) -> &Path {
+        &self.cache
+    }
+}
+
+/// The folder set in `LUBATV_HOME`, if any.
+pub fn isolated_home() -> Option<PathBuf> {
+    std::env::var_os(HOME_ENV)
+        .filter(|v| !v.is_empty())
+        .map(PathBuf::from)
+}
+
+/// LubaTV's data, cache and log folders: the user's, or those under `LUBATV_HOME`.
+pub fn project_dirs() -> Result<Dirs> {
+    if let Some(home) = isolated_home() {
+        return Ok(Dirs::under(&home));
+    }
+    let dirs = ProjectDirs::from("dev", "luisbadalo", "lubatv").context("project dir not found")?;
+    Ok(Dirs {
+        data: dirs.data_dir().to_owned(),
+        data_local: dirs.data_local_dir().to_owned(),
+        cache: dirs.cache_dir().to_owned(),
+    })
 }
 
 fn get_nuke_path() -> Result<PathBuf> {
@@ -406,7 +454,17 @@ pub fn get_user_agent_from_source(source: &Source) -> Result<String> {
 
 #[cfg(test)]
 mod test_utils {
-    use super::{get_extension, sanitize};
+    use super::{Dirs, get_extension, sanitize};
+
+    #[test]
+    fn test_isolated_dirs() {
+        // Everything stays under LUBATV_HOME, so a test run can't reach the user's folders.
+        let home = std::path::Path::new("lubatv-home");
+        let dirs = Dirs::under(home);
+        assert_eq!(dirs.data_dir(), home.join("data"));
+        assert_eq!(dirs.data_local_dir(), home.join("local"));
+        assert_eq!(dirs.cache_dir(), home.join("cache"));
+    }
 
     #[test]
     fn test_dev_deps_dir() {

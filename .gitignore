@@ -37,6 +37,9 @@ yarn-error.log
 testem.log
 /typings
 
+# Claude Code: personal settings stay local; skills in .claude/skills are shared
+.claude/settings.local.json
+
 # System files
 .DS_Store
 Thumbs.db

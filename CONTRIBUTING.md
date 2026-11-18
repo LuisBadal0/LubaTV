@@ -25,6 +25,18 @@ npm run build:windows  # Windows installers with the player files included
 The app uses your real library and contacts your IPTV providers. Frontend tests fake the
 backend with `mockTauri()` from `src/testing/test-setup.ts`.
 
+To try a change without touching your library, on Windows:
+
+```
+pwsh -File scripts/verify/start.ps1 -Fresh
+```
+
+It keeps the database, logs and settings in a temporary folder (through the `LUBATV_HOME`
+environment variable), serves a made-up playlist at `http://127.0.0.1:8765/playlist.m3u` and
+can run while the installed LubaTV is open. `scripts/verify/drive.mjs` clicks, types and takes
+screenshots in that window, and reports what mpv is playing; coding agents use it through the
+`verify` skill in `.claude/skills/verify`.
+
 ## Test
 
 Run these before opening a pull request. CI runs them too.
