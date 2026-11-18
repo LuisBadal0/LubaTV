@@ -5,7 +5,7 @@
 // <folder> holds the generated test videos (created on first run with ffmpeg).
 // Endpoints, on http://127.0.0.1:<port> (default 8765):
 //   /playlist.m3u      live channels in three groups, plus two movies
-//   /live/<n>.ts       a test pattern with a tone, in MPEG-TS
+//   /live/<n>.ts       a test pattern with a silent audio track, in MPEG-TS
 //   /movie/<n>.mp4     the same, as MP4 (LubaTV lists .mp4 links as movies)
 //   /logo/<n>.svg      a coloured tile with the channel's initials
 //   /requests          JSON list of the stream paths requested so far, to confirm playback
@@ -54,7 +54,8 @@ function makeVideo(file, format) {
     [
       "-hide_banner", "-loglevel", "error", "-y",
       "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=25",
-      "-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000",
+      // Silent: an audio track like real streams have, without sound during checks.
+      "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
       "-t", "120",
       "-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p",
       "-c:a", "aac",
@@ -116,8 +117,9 @@ function sendFile(req, res, file, type) {
   createReadStream(file).pipe(res);
 }
 
-const tsFile = join(folder, "test.ts");
-const mp4File = join(folder, "test.mp4");
+// New names whenever the videos change, so a kept folder never serves the old ones.
+const tsFile = join(folder, "test-silent.ts");
+const mp4File = join(folder, "test-silent.mp4");
 makeVideo(tsFile, "ts");
 makeVideo(mp4File, "mp4");
 
