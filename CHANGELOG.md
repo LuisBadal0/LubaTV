@@ -11,6 +11,8 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-11-18
+
 ### Changed
 
 - Updating LubaTV now shows a full-window screen in LubaTV's own style: the download with its progress in MB, then installing, then reopening. The Windows installer window no longer appears, a notification says LubaTV is coming back while it is closed, and it reopens by itself a few seconds later. Anything playing stops before the update instead of carrying on in the background. If an update fails, the screen says which step failed and lets you try again without downloading it again. You'll see this from the next update after this version.
