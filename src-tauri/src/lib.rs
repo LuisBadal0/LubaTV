@@ -132,7 +132,8 @@ pub fn run() {
             remove_from_history,
             get_all_expiries,
             player_files_status,
-            sync_player_files
+            sync_player_files,
+            close_players
         ])
         .setup(|app| {
             app.manage(Mutex::new(AppState {
@@ -621,6 +622,13 @@ fn restore_favs(id: i64, path: String) -> Result<(), String> {
 #[tauri::command(async)]
 fn clear_history() -> Result<(), String> {
     sql::clear_history().map_err(map_err_frontend)
+}
+
+/// Stops playback before an update: the updater closes LubaTV without its usual clean-up, so
+/// mpv windows would otherwise keep playing. Synchronous, so it may wait for mpv to exit.
+#[tauri::command]
+fn close_players() {
+    mpv::close_all();
 }
 
 #[tauri::command(async)]

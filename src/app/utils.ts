@@ -15,6 +15,11 @@ export const sanitizeFileName = (fileName: string) => {
   );
 };
 
+/** A size in MB for progress text: one decimal under 10 MB ("5.9"), whole above ("170"). */
+export const megabytes = (bytes: number): string => {
+  return (bytes / 1048576).toFixed(bytes < 10 * 1048576 ? 1 : 0);
+};
+
 export const getDateFormatted = (): string => {
   return new Date().toISOString().replace(/T|:/g, "-").split(".")[0];
 };

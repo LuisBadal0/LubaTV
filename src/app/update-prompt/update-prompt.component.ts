@@ -1,6 +1,7 @@
 import { Component } from "@angular/core";
 import { UpdateService } from "../update.service";
 import { PlayerFilesService } from "../player-files.service";
+import { megabytes } from "../utils";
 
 /**
  * Bottom-right card that offers a newer version found by the start-up check, and shows
@@ -24,13 +25,12 @@ export class UpdatePromptComponent {
     return this.player.state != "idle";
   }
 
-  mb(bytes: number): string {
-    return (bytes / 1048576).toFixed(bytes < 10 * 1048576 ? 1 : 0);
-  }
+  readonly mb = megabytes;
 
   get visible(): boolean {
     const s = this.updates.state;
-    if (!this.updates.prompt || this.updates.dismissed) return false;
-    return s == "available" || s == "downloading" || s == "installing";
+    // While updating, the full-window update screen takes over.
+    if (!this.updates.prompt || this.updates.dismissed || this.updates.updating) return false;
+    return s == "available";
   }
 }

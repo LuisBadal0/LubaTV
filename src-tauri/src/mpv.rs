@@ -170,7 +170,8 @@ pub async fn cancel_play(
     Ok(())
 }
 
-/// Closes every mpv window LubaTV opened. Called when LubaTV exits.
+/// Closes every mpv window LubaTV opened. Called when LubaTV exits, and before an update: the
+/// updater ends LubaTV with `process::exit`, which skips the exit clean-up.
 pub fn close_all() {
     let windows: Vec<Arc<Window>> = WINDOWS.lock().unwrap().clone();
     if windows.is_empty() {
