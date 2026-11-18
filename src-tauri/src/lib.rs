@@ -239,8 +239,9 @@ async fn sync_player_files(app: AppHandle) -> Result<player_files::Status, Strin
     player_files::sync(app).await.map_err(map_err_frontend)
 }
 
+/// The error the window shows, without the credentials that provider links carry.
 fn map_err_frontend(e: Error) -> String {
-    format!("{:?}", e)
+    log::redact(&format!("{:?}", e))
 }
 
 #[tauri::command(async)]
