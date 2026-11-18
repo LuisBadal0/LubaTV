@@ -1,0 +1,72 @@
+@if (updates.updating) {
+  <div class="update-screen" role="dialog" aria-modal="true" aria-labelledby="update-title"
+    aria-describedby="update-subtitle" data-tauri-drag-region>
+    <div class="panel">
+      <div class="logo" [class.working]="!failed" [class.failed]="failed">
+        <img src="assets/brand/lubatv-icon.svg" alt="" />
+      </div>
+
+      <h1 id="update-title">{{ title }}</h1>
+      <p id="update-subtitle" class="subtitle" aria-live="polite">{{ subtitle }}</p>
+
+      <ol class="steps">
+        <li [class]="step('download')">
+          <span class="mark" aria-hidden="true">
+            @switch (step('download')) {
+              @case ('done') { <app-icon name="check" /> }
+              @case ('failed') { <app-icon name="close" /> }
+              @default { <app-icon name="download" /> }
+            }
+          </span>
+          <div>
+            <b>Download</b>
+            <small>{{ step('download') == 'done' ? 'Done' : sizeText }}</small>
+          </div>
+        </li>
+        <li [class]="step('install')">
+          <span class="mark" aria-hidden="true">
+            @switch (step('install')) {
+              @case ('failed') { <app-icon name="close" /> }
+              @default { <app-icon name="archive" /> }
+            }
+          </span>
+          <div>
+            <b>Install</b>
+            <small>{{ step('install') == 'active' ? 'Closing LubaTV…' : 'A few seconds' }}</small>
+          </div>
+        </li>
+        <li [class]="step('restart')">
+          <span class="mark" aria-hidden="true"><app-icon name="refresh" /></span>
+          <div>
+            <b>Reopen</b>
+            <small>With what's new</small>
+          </div>
+        </li>
+      </ol>
+
+      @if (!failed) {
+        <div class="progress" role="progressbar" aria-label="Update progress" aria-valuemin="0"
+          aria-valuemax="100" [attr.aria-valuenow]="updates.state == 'installing' ? null : updates.progress">
+          <i [class.indeterminate]="updates.state == 'installing' || !updates.total"
+            [style.width.%]="updates.state == 'installing' || !updates.total ? null : updates.progress"></i>
+        </div>
+        <p class="meta">
+          @if (updates.state == 'downloading') {
+            <span>{{ updates.total ? updates.progress + '%' : 'Downloading…' }}</span>
+            <span>{{ sizeText }}</span>
+          } @else {
+            <span>Playback stops while LubaTV updates.</span>
+          }
+        </p>
+      } @else {
+        <p class="error" [title]="updates.error">{{ updates.error }}</p>
+        <div class="actions">
+          <button #retry type="button" class="btn btn-primary" (click)="updates.install()">
+            <app-icon name="refresh" />Try again
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="updates.closeUpdate()">Later</button>
+        </div>
+      }
+    </div>
+  </div>
+}

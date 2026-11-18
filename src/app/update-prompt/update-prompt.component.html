@@ -33,36 +33,24 @@
   <div class="update-card" role="status">
     <img src="assets/brand/lubatv-icon.svg" alt="" />
     <div class="body">
-      @switch (updates.state) {
-        @case ('available') {
-          <b>LubaTV {{ updates.version }} is available</b>
-          <span>It installs in a few seconds and LubaTV restarts.</span>
-          @if (updates.notes) {
-            <button type="button" class="link-btn" (click)="showNotes = !showNotes"
-              [attr.aria-expanded]="showNotes">
-              {{ showNotes ? "Hide what's new" : "What's new" }}
-            </button>
-            @if (showNotes) {
-              <div class="notes-box">
-                <app-release-notes [notes]="updates.notes" [compact]="true" />
-              </div>
-            }
-          }
-          <div class="actions">
-            <button type="button" class="btn btn-primary btn-sm" (click)="updates.install()">Update now</button>
-            <button type="button" class="btn btn-secondary btn-sm" (click)="updates.dismissed = true">Later</button>
+      <!-- Only the offer: once updating, the full-window update screen takes over. -->
+      <b>LubaTV {{ updates.version }} is available</b>
+      <span>It installs in a few seconds and LubaTV restarts.</span>
+      @if (updates.notes) {
+        <button type="button" class="link-btn" (click)="showNotes = !showNotes"
+          [attr.aria-expanded]="showNotes">
+          {{ showNotes ? "Hide what's new" : "What's new" }}
+        </button>
+        @if (showNotes) {
+          <div class="notes-box">
+            <app-release-notes [notes]="updates.notes" [compact]="true" />
           </div>
         }
-        @case ('downloading') {
-          <b>Downloading LubaTV {{ updates.version }}…</b>
-          <div class="bar"><i [style.width.%]="updates.progress"></i></div>
-          <span>{{ updates.progress }}%</span>
-        }
-        @case ('installing') {
-          <b>Installing LubaTV {{ updates.version }}…</b>
-          <span>LubaTV will restart on its own.</span>
-        }
       }
+      <div class="actions">
+        <button type="button" class="btn btn-primary btn-sm" (click)="updates.install()">Update now</button>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="updates.dismissed = true">Later</button>
+      </div>
     </div>
   </div>
 }

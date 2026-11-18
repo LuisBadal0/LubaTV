@@ -37,6 +37,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { SpotlightComponent } from './spotlight/spotlight.component';
 import { CategoryPaneComponent } from './category-pane/category-pane.component';
 import { UpdatePromptComponent } from './update-prompt/update-prompt.component';
+import { UpdateScreenComponent } from './update-screen/update-screen.component';
 import { ReleaseNotesComponent } from './release-notes/release-notes.component';
 import { WhatsNewModalComponent } from './whats-new-modal/whats-new-modal.component';
 import { WindowControlsComponent } from './window-controls/window-controls.component';
@@ -77,6 +78,7 @@ import { TimeUntilPipe } from './pipes/time-until.pipe';
     SpotlightComponent,
     CategoryPaneComponent,
     UpdatePromptComponent,
+    UpdateScreenComponent,
     ReleaseNotesComponent,
     WhatsNewModalComponent,
     WindowControlsComponent,
