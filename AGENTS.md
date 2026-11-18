@@ -78,6 +78,24 @@ bullets. Don't create tags or releases by hand. `CONTRIBUTING.md` has the full s
   **Version** is "No version change" except in a release PR.
 - When one PR builds on another, base its branch on the other and say "Stacked on #N" at
   the top of the body.
+- Before opening a PR, review the diff with fresh context: `/code-review`, plus
+  `/security-review` when the change touches credentials, network code, SQL, the updater or
+  CI. `REVIEW.md` says what counts as a problem here. Fix what it finds, or say in **Checks**
+  why a finding stays.
+- Fill in **Risk** and **To undo** in **Checks**. Changes to the updater, the signing key, CI
+  workflows, player files, SQL or credential handling are high risk: say what you checked.
+
+## Keeping checks honest
+
+- Never make a check pass by weakening it: no skipped or loosened tests, sleeps or retries to
+  get past a flaky test. Find the cause; if you can't, delete the test and say why in the PR.
+- When the same mistake turns up in two PRs, turn it into a test, a CI check or a line in
+  `REVIEW.md`.
+- After three attempts at the same failing check, stop and ask the owner.
+- `.claude/settings.json` runs `rustfmt` on Rust files after each edit (`.claude/hooks`). It
+  does nothing when rustfmt isn't installed; CI still runs `cargo fmt --check`.
+- `main` is protected: merging needs **Check version** and both **build** jobs to pass, and
+  force-pushes are refused.
 
 ## Things to know
 
