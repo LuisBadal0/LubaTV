@@ -11,6 +11,8 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-11-18
+
 ### Fixed
 
 - Your IPTV username and password no longer appear in LubaTV's log files or in error messages. Before, a failed request to an Xtream account or playlist link could write the full link, with your credentials, to the log. If you have shared an old log file, consider changing your provider password.
