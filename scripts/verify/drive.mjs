@@ -34,15 +34,26 @@ function fail(message) {
 
 // ---------- Chrome DevTools Protocol ----------
 
-async function openPage() {
-  let targets;
-  try {
-    targets = await (await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`)).json();
-  } catch {
-    fail(`No WebView on port ${CDP_PORT}. Is LubaTV running from scripts/verify/start.ps1?`);
-  }
-  const page = targets.find((t) => t.type === "page" && !t.url.startsWith("devtools:"));
-  if (!page) fail("LubaTV's window has no page yet.");
+/** Finds LubaTV's page, retrying until `timeout` ms: the window may still be starting. */
+async function findPage(timeout) {
+  const deadline = Date.now() + timeout;
+  let reason;
+  do {
+    try {
+      const targets = await (await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`)).json();
+      const page = targets.find((t) => t.type === "page" && !t.url.startsWith("devtools:"));
+      if (page) return page;
+      reason = "LubaTV's window has no page yet.";
+    } catch {
+      reason = `No WebView on port ${CDP_PORT}. Is LubaTV running from scripts/verify/start.ps1?`;
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  } while (Date.now() < deadline);
+  fail(reason);
+}
+
+async function openPage(timeout) {
+  const page = await findPage(timeout);
   const ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((ok, ko) => {
     ws.onopen = ok;
@@ -253,7 +264,9 @@ async function run() {
     return;
   }
 
-  const cdp = await openPage();
+  // `wait` and `wait-text` also wait for the window itself, e.g. while the app is building.
+  const waiting = command === "wait" || command === "wait-text";
+  const cdp = await openPage(waiting && args[1] ? Number(args[1]) : DEFAULT_TIMEOUT);
   try {
     switch (command) {
       case "wait": {
