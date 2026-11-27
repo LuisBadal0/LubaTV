@@ -212,6 +212,10 @@ where
     T: serde::de::DeserializeOwned,
 {
     if !status.is_success() {
+        // Some panels send an error status with valid data, such as `[]` for an empty list.
+        if let Ok(data) = serde_json::from_slice(body) {
+            return Ok(data);
+        }
         bail!(
             "The provider answered {action} with HTTP {status}. {}",
             answer_excerpt(body)
@@ -245,7 +249,8 @@ fn refused_login(body: &[u8]) -> bool {
 
 fn answer_excerpt(body: &[u8]) -> String {
     let text = String::from_utf8_lossy(body);
-    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    // Hidden before it is cut: a link cut in the middle no longer looks like one to redact.
+    let text = log::redact(&text.split_whitespace().collect::<Vec<_>>().join(" "));
     if text.is_empty() {
         return "The answer was empty.".to_string();
     }
@@ -253,7 +258,7 @@ fn answer_excerpt(body: &[u8]) -> String {
     if excerpt.len() < text.len() {
         excerpt.push('\u{2026}');
     }
-    format!("It starts with: {}", log::redact(&excerpt))
+    format!("It starts with: {excerpt}")
 }
 
 fn process_xtream(
@@ -717,5 +722,21 @@ mod tests {
             "{excerpt}"
         );
         assert!(excerpt.ends_with('\u{2026}'), "{excerpt}");
+    }
+
+    #[test]
+    fn a_link_cut_off_by_the_excerpt_still_hides_credentials() {
+        // The cut falls inside the password, after which the link no longer looks like one.
+        let link = "http://host.example/live/secret-user/secret-password/123.ts";
+        let body = format!("{}{link}", "x".repeat(ANSWER_EXCERPT_CHARS - 45));
+        let excerpt = answer_excerpt(body.as_bytes());
+        assert!(!excerpt.contains("secret"), "{excerpt}");
+    }
+
+    #[test]
+    fn uses_valid_data_sent_with_an_error_status() {
+        let cats: Vec<XtreamCategory> =
+            parse_xtream_answer(StatusCode::NOT_FOUND, b"[]", GET_SERIES_CATEGORIES).unwrap();
+        assert!(cats.is_empty());
     }
 }
