@@ -11,6 +11,10 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ## [Unreleased]
 
+### Changed
+
+- When an Xtream account fails to load, the error now says why: the HTTP error the provider sent, an empty answer, a refused username or password, or the start of a web page it sent instead of its channel list (with any username and password hidden). Before, it only said "Too many Xtream requests failed" or "error decoding response body". The same goes for series episodes and the TV guide.
+
 ### Fixed
 
 - Re-streaming a channel now sends all of the playlist's headers for it (Origin, Referer and user agent) and falls back to the source's stream user agent, as playing it does. Before, only the last header reached the provider, so channels that check the Referer could fail to re-stream.

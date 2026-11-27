@@ -12,14 +12,14 @@ use crate::types::XtreamStatus;
 use crate::utils::get_local_time;
 use crate::utils::get_user_agent_from_source;
 use anyhow::anyhow;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use base64::Engine;
 use base64::prelude::BASE64_STANDARD;
 use chrono::DateTime;
 use chrono::Local;
 use chrono::NaiveDateTime;
 use futures::future::join_all;
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 use rusqlite::Transaction;
 use serde::Deserialize;
 use serde::Serialize;
@@ -155,33 +155,31 @@ pub async fn get_xtream(mut source: Source, wipe: bool) -> Result<()> {
     } else {
         source.id = Some(sql::create_or_find_source_by_name(&tx, &source)?);
     }
-    let mut fail_count = 0;
+    let mut failures = Vec::new();
     live.and_then(|live| process_xtream(&tx, live, live_cats?, &source, media_type::LIVESTREAM))
-        .unwrap_or_else(|e| {
-            log::log(format!("{:?}", e.context("Failed to process live")));
-            fail_count += 1;
-        });
+        .unwrap_or_else(|e| failures.push(e.context("Failed to load live TV")));
     vods.and_then(|vods: Vec<XtreamStream>| {
         process_xtream(&tx, vods, vods_cats?, &source, media_type::MOVIE)
     })
-    .unwrap_or_else(|e| {
-        log::log(format!("{:?}", e.context("Failed to process vods")));
-        fail_count += 1;
-    });
+    .unwrap_or_else(|e| failures.push(e.context("Failed to load movies")));
     series
         .and_then(|series: Vec<XtreamStream>| {
             process_xtream(&tx, series, series_cats?, &source, media_type::SERIE)
         })
-        .unwrap_or_else(|e| {
-            log::log(format!("{:?}", e.context("Failed to process series")));
-            fail_count += 1;
-        });
-    if fail_count > 2 {
+        .unwrap_or_else(|e| failures.push(e.context("Failed to load series")));
+    for failure in &failures {
+        log::log(format!("{:?}", failure));
+    }
+    if failures.len() == 3 {
         match tx.rollback() {
             Ok(_) => {}
             Err(e) => log::log(format!("Failed to rollback tx: {:?}", e)),
         }
-        return Err(anyhow::anyhow!("Too many Xtream requests failed"));
+        // All three failed, most often for the same reason, so the first one says why.
+        let first = failures.swap_remove(0);
+        return Err(first.context(
+            "Too many Xtream requests failed: live TV, movies and series all failed to load",
+        ));
     }
     if wipe {
         sql::restore_preserve(&tx, source.id.context("no source id")?, channel_preserve)?;
@@ -197,8 +195,65 @@ where
 {
     let client = Client::builder().user_agent(user_agent).build()?;
     url.query_pairs_mut().append_pair("action", action);
-    let data = client.get(url).send().await?.json::<T>().await?;
-    Ok(data)
+    let response = client.get(url).send().await?;
+    let status = response.status();
+    let body = response.bytes().await?;
+    parse_xtream_answer(status, &body, action)
+}
+
+/// How much of a provider's answer an error shows.
+const ANSWER_EXCERPT_CHARS: usize = 120;
+
+/// Reads a provider's answer to `action`. When it isn't the data asked for, the error says
+/// what came back instead (an HTTP error, an empty answer, a web page, a refused login), so
+/// people can tell a wrong address or a blocked user agent from a broken account.
+fn parse_xtream_answer<T>(status: StatusCode, body: &[u8], action: &str) -> Result<T>
+where
+    T: serde::de::DeserializeOwned,
+{
+    if !status.is_success() {
+        bail!(
+            "The provider answered {action} with HTTP {status}. {}",
+            answer_excerpt(body)
+        );
+    }
+    serde_json::from_slice(body).map_err(|e| {
+        let reason = if body.iter().all(u8::is_ascii_whitespace) {
+            "The provider sent an empty answer".to_string()
+        } else if refused_login(body) {
+            "The provider refused the username or password".to_string()
+        } else if serde_json::from_slice::<serde_json::Value>(body).is_err() {
+            format!(
+                "The provider's answer isn't Xtream data, so the address may be wrong or the \
+                 provider may block this user agent. {}",
+                answer_excerpt(body)
+            )
+        } else {
+            "The provider's answer isn't in the form LubaTV expects".to_string()
+        };
+        anyhow!(e).context(format!("{reason} (asked for {action})"))
+    })
+}
+
+/// Xtream panels answer `{"user_info":{"auth":0}}` when the login is wrong.
+fn refused_login(body: &[u8]) -> bool {
+    serde_json::from_slice::<serde_json::Value>(body)
+        .ok()
+        .and_then(|v| v.get("user_info")?.get("auth").cloned())
+        .is_some_and(|auth| auth == 0 || auth == "0")
+}
+
+fn answer_excerpt(body: &[u8]) -> String {
+    let text = String::from_utf8_lossy(body);
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if text.is_empty() {
+        return "The answer was empty.".to_string();
+    }
+    let mut excerpt: String = text.chars().take(ANSWER_EXCERPT_CHARS).collect();
+    if excerpt.len() < text.len() {
+        excerpt.push('\u{2026}');
+    }
+    format!("It starts with: {}", log::redact(&excerpt))
 }
 
 fn process_xtream(
@@ -597,4 +652,70 @@ pub async fn get_all_expiries() -> Result<HashMap<i64, i64>> {
         })
         .collect();
     Ok(statuses)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn error(status: u16, body: &str) -> String {
+        let status = StatusCode::from_u16(status).unwrap();
+        format!(
+            "{:#}",
+            parse_xtream_answer::<Vec<XtreamCategory>>(status, body.as_bytes(), GET_VODS)
+                .unwrap_err()
+        )
+    }
+
+    #[test]
+    fn reads_the_data_asked_for() {
+        let cats: Vec<XtreamCategory> = parse_xtream_answer(
+            StatusCode::OK,
+            br#"[{"category_id":"1","category_name":"News"}]"#,
+            GET_LIVE_STREAM_CATEGORIES,
+        )
+        .unwrap();
+        assert_eq!(cats.len(), 1);
+    }
+
+    #[test]
+    fn says_what_came_back_instead() {
+        let e = error(403, "<html><body>Forbidden</body></html>");
+        assert!(e.contains("HTTP 403 Forbidden"), "{e}");
+        assert!(e.contains("It starts with: <html><body>Forbidden"), "{e}");
+
+        let e = error(200, "  ");
+        assert!(
+            e.starts_with("The provider sent an empty answer (asked for get_vod_streams)"),
+            "{e}"
+        );
+
+        let e = error(200, r#"{"user_info":{"auth":0}}"#);
+        assert!(
+            e.starts_with("The provider refused the username or password"),
+            "{e}"
+        );
+
+        let e = error(200, "<!DOCTYPE html><title>Suspended</title>");
+        assert!(e.contains("isn't Xtream data"), "{e}");
+        assert!(e.contains("<!DOCTYPE html><title>Suspended</title>"), "{e}");
+
+        let e = error(200, r#"{"unexpected":true}"#);
+        assert!(e.contains("isn't in the form LubaTV expects"), "{e}");
+    }
+
+    #[test]
+    fn excerpt_is_short_and_hides_credentials() {
+        let body = format!(
+            "http://host.example/get.php?username=secret-user&password=secret-pass {}",
+            "x".repeat(500)
+        );
+        let excerpt = answer_excerpt(body.as_bytes());
+        assert!(!excerpt.contains("secret"), "{excerpt}");
+        assert!(
+            excerpt.chars().count() < ANSWER_EXCERPT_CHARS + 40,
+            "{excerpt}"
+        );
+        assert!(excerpt.ends_with('\u{2026}'), "{excerpt}");
+    }
 }
