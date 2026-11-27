@@ -98,17 +98,27 @@ struct XtreamEPG {
     epg_listings: Vec<XtreamEPGItem>,
 }
 
+/// One programme in a provider's guide. Providers leave out different fields (some send
+/// `stop` instead of `end`, or no archive flags), so only the start time is required.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct XtreamEPGItem {
+    #[serde(default)]
     id: serde_json::Value,
+    #[serde(default)]
     title: String,
+    #[serde(default)]
     description: String,
     start_timestamp: serde_json::Value,
+    #[serde(default)]
     stop_timestamp: serde_json::Value,
-    now_playing: u8,
-    has_archive: u8,
-    start: String,
-    end: String,
+    #[serde(default)]
+    now_playing: serde_json::Value,
+    #[serde(default)]
+    has_archive: serde_json::Value,
+    #[serde(default)]
+    start: Option<String>,
+    #[serde(default, alias = "stop")]
+    end: Option<String>,
 }
 
 fn build_xtream_url(source: &mut Source) -> Result<Url> {
@@ -565,7 +575,17 @@ pub async fn get_epg(channel: Channel) -> Result<Vec<EPG>> {
     let current_time = Local::now();
     let mut otv_epgs = Vec::new();
     for item in epg.epg_listings {
-        let item = xtream_epg_to_epg(item, &url, &stream_id)?;
+        // One programme the provider sent incomplete shouldn't hide the rest of the guide.
+        let item = match xtream_epg_to_epg(item, &url, &stream_id) {
+            Ok(item) => item,
+            Err(e) => {
+                log::log(format!(
+                    "{:?}",
+                    e.context("Skipped a programme in the guide")
+                ));
+                continue;
+            }
+        };
         if is_valid_epg(&item, &current_time)? {
             otv_epgs.push(item);
         }
@@ -582,32 +602,58 @@ fn is_valid_epg(epg: &EPG, now: &DateTime<Local>) -> Result<bool> {
 fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<EPG> {
     let start_timestamp =
         get_serde_json_i64(&epg.start_timestamp).context("no valid start timestamp")?;
+    let stop_timestamp =
+        get_serde_json_i64(&epg.stop_timestamp).context("no valid end timestamp")?;
+    // Catch-up needs the start in the provider's own clock, which only `start` gives.
+    let timeshift_url = match (is_set(&epg.has_archive), epg.start) {
+        (true, Some(start)) => {
+            let minutes = match epg.end {
+                Some(end) => minutes_between(&start, &end)?,
+                None => (stop_timestamp - start_timestamp) / 60,
+            };
+            Some(get_timeshift_url(url.clone(), &start, minutes, stream_id)?)
+        }
+        _ => None,
+    };
     Ok(EPG {
-        epg_id: get_serde_json_string(&epg.id).context("no epg id")?,
-        title: String::from_utf8(BASE64_STANDARD.decode(&epg.title)?)?,
-        description: String::from_utf8(BASE64_STANDARD.decode(&epg.description)?)?,
+        epg_id: get_serde_json_string(&epg.id)
+            .filter(|id| !id.is_empty())
+            .unwrap_or_else(|| format!("{stream_id}-{start_timestamp}")),
+        title: decode_epg_text(&epg.title),
+        description: decode_epg_text(&epg.description),
         start_time: get_local_time(start_timestamp)?
             .format("%B %d, %H:%M")
             .to_string(),
-        end_time: get_local_time(
-            get_serde_json_i64(&epg.stop_timestamp).context("no valid end timestamp")?,
-        )?
-        .format("%B %d, %H:%M")
-        .to_string(),
+        end_time: get_local_time(stop_timestamp)?
+            .format("%B %d, %H:%M")
+            .to_string(),
         start_timestamp,
-        timeshift_url: if epg.has_archive == 1 {
-            Some(get_timeshift_url(
-                url.clone(),
-                epg.start,
-                epg.end,
-                stream_id,
-            )?)
-        } else {
-            None
-        },
-        has_archive: epg.has_archive == 1,
-        now_playing: epg.now_playing == 1,
+        has_archive: timeshift_url.is_some(),
+        timeshift_url,
+        now_playing: is_set(&epg.now_playing),
     })
+}
+
+/// An Xtream flag: `1`, `"1"` or `true`.
+fn is_set(value: &serde_json::Value) -> bool {
+    value.as_u64() == Some(1) || value.as_str().map(str::trim) == Some("1") || value == true
+}
+
+/// Xtream guides send titles and descriptions in base64; a few send them as plain text.
+fn decode_epg_text(text: &str) -> String {
+    BASE64_STANDARD
+        .decode(text.trim())
+        .ok()
+        .and_then(|bytes| String::from_utf8(bytes).ok())
+        .unwrap_or_else(|| text.to_string())
+}
+
+const XTREAM_TIME_FORMAT: &str = "%Y-%m-%d %H:%M:%S";
+
+fn minutes_between(start: &str, end: &str) -> Result<i64> {
+    let start = NaiveDateTime::parse_from_str(start, XTREAM_TIME_FORMAT)?;
+    let end = NaiveDateTime::parse_from_str(end, XTREAM_TIME_FORMAT)?;
+    Ok(end.signed_duration_since(start).num_minutes())
 }
 
 fn get_timeshift_url_base(source: &Source) -> Result<Url> {
@@ -621,17 +667,14 @@ fn get_timeshift_url_base(source: &Source) -> Result<Url> {
     Ok(url)
 }
 
-fn get_timeshift_url(mut url: Url, start: String, end: String, stream_id: &str) -> Result<String> {
-    let start = NaiveDateTime::parse_from_str(&start, "%Y-%m-%d %H:%M:%S")?;
-    let duration = NaiveDateTime::parse_from_str(&end, "%Y-%m-%d %H:%M:%S")?
-        .signed_duration_since(start)
-        .num_minutes()
+fn get_timeshift_url(mut url: Url, start: &str, minutes: i64, stream_id: &str) -> Result<String> {
+    let start = NaiveDateTime::parse_from_str(start, XTREAM_TIME_FORMAT)?
+        .format("%Y-%m-%d:%H-%M")
         .to_string();
-    let start = start.format("%Y-%m-%d:%H-%M").to_string();
     url.query_pairs_mut()
         .append_pair("stream", stream_id)
         .append_pair("start", &start)
-        .append_pair("duration", &duration);
+        .append_pair("duration", &minutes.to_string());
     Ok(url.to_string())
 }
 
@@ -738,5 +781,82 @@ mod tests {
         let cats: Vec<XtreamCategory> =
             parse_xtream_answer(StatusCode::NOT_FOUND, b"[]", GET_SERIES_CATEGORIES).unwrap();
         assert!(cats.is_empty());
+    }
+
+    fn item(json: &str) -> XtreamEPGItem {
+        serde_json::from_str(json).unwrap()
+    }
+
+    fn base_url() -> Url {
+        Url::parse("http://host.example/streaming/timeshift.php?username=u&password=p").unwrap()
+    }
+
+    #[test]
+    fn reads_a_full_programme() {
+        let epg = xtream_epg_to_epg(
+            item(
+                r#"{"id":"7","title":"TmV3cw==","description":"VG9kYXk=","start":"2026-11-27 20:00:00","end":"2026-11-27 20:30:00","start_timestamp":"1795809600","stop_timestamp":"1795811400","now_playing":0,"has_archive":1}"#,
+            ),
+            &base_url(),
+            "42",
+        )
+        .unwrap();
+        assert_eq!(epg.epg_id, "7");
+        assert_eq!(epg.title, "News");
+        assert_eq!(epg.description, "Today");
+        assert!(epg.has_archive);
+        assert!(!epg.now_playing);
+        let url = epg.timeshift_url.unwrap();
+        assert!(url.contains("start=2026-11-27%3A20-00"), "{url}");
+        assert!(url.contains("duration=30"), "{url}");
+    }
+
+    #[test]
+    fn reads_a_programme_with_fields_left_out() {
+        // As in upstream issue #281: no `end`, no description, flags as strings.
+        let epg = xtream_epg_to_epg(
+            item(
+                r#"{"title":"TmV3cw==","start":"2026-11-27 20:00:00","start_timestamp":1795809600,"stop_timestamp":1795813200,"now_playing":"1","has_archive":"1"}"#,
+            ),
+            &base_url(),
+            "42",
+        )
+        .unwrap();
+        assert_eq!(epg.epg_id, "42-1795809600");
+        assert_eq!(epg.description, "");
+        assert!(epg.now_playing);
+        let url = epg.timeshift_url.unwrap();
+        assert!(url.contains("duration=60"), "{url}");
+    }
+
+    #[test]
+    fn accepts_stop_for_end_and_plain_text_titles() {
+        let epg = xtream_epg_to_epg(
+            item(
+                r#"{"id":1,"title":"Late Film","start":"2026-11-27 22:00:00","stop":"2026-11-27 23:45:00","start_timestamp":1795816800,"stop_timestamp":1795823100,"has_archive":1}"#,
+            ),
+            &base_url(),
+            "42",
+        )
+        .unwrap();
+        assert_eq!(epg.title, "Late Film");
+        assert!(epg.timeshift_url.unwrap().contains("duration=105"));
+    }
+
+    #[test]
+    fn no_catch_up_without_the_providers_start_time() {
+        let epg = xtream_epg_to_epg(
+            item(r#"{"title":"","start_timestamp":1795809600,"stop_timestamp":1795811400,"has_archive":1}"#),
+            &base_url(),
+            "42",
+        )
+        .unwrap();
+        assert!(!epg.has_archive);
+        assert!(epg.timeshift_url.is_none());
+    }
+
+    #[test]
+    fn a_programme_without_times_is_refused() {
+        assert!(xtream_epg_to_epg(item(r#"{"start_timestamp":null}"#), &base_url(), "42").is_err());
     }
 }
