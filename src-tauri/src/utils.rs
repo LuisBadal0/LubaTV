@@ -56,11 +56,35 @@ pub async fn refresh_source(source: Source) -> Result<()> {
 }
 
 pub async fn refresh_all() -> Result<()> {
-    let sources = sql::get_sources()?;
-    for source in sources {
-        refresh_source(source).await?;
+    let sources = sql::get_sources()?
+        .into_iter()
+        .map(|source| (source.name.clone(), source))
+        .collect();
+    refresh_each(sources, refresh_source).await
+}
+
+/// Refreshes each source in turn. One that fails (a provider that is down, an expired
+/// account) doesn't stop the ones after it. The error names every source that failed and
+/// gives the first one's reason; the others' reasons go to the log.
+async fn refresh_each<T, F, Fut>(sources: Vec<(String, T)>, refresh: F) -> Result<()>
+where
+    F: Fn(T) -> Fut,
+    Fut: std::future::Future<Output = Result<()>>,
+{
+    let mut failed = Vec::new();
+    let mut first_error = None;
+    for (name, source) in sources {
+        if let Err(e) = refresh(source).await {
+            let e = e.context(format!("Failed to refresh {name}"));
+            log(format!("{e:?}"));
+            failed.push(name);
+            first_error.get_or_insert(e);
+        }
     }
-    Ok(())
+    match first_error {
+        None => Ok(()),
+        Some(e) => Err(e.context(format!("Couldn't refresh {}", failed.join(", ")))),
+    }
 }
 
 pub fn get_local_time(timestamp: i64) -> Result<DateTime<Local>> {
@@ -469,7 +493,41 @@ pub fn get_user_agent_from_source(source: &Source) -> Result<String> {
 
 #[cfg(test)]
 mod test_utils {
-    use super::{Dirs, get_extension, sanitize};
+    use super::{Dirs, get_extension, refresh_each, sanitize};
+    use std::sync::Mutex;
+
+    #[tokio::test]
+    async fn refresh_all_keeps_going_after_a_failure() {
+        let refreshed = Mutex::new(Vec::new());
+        let sources = ["First", "Broken", "Last", "Also broken"]
+            .map(|name| (name.to_string(), name))
+            .to_vec();
+        let result = refresh_each(sources, |name| {
+            refreshed.lock().unwrap().push(name);
+            async move {
+                if name.contains("roken") {
+                    anyhow::bail!("provider answered HTTP 503");
+                }
+                Ok(())
+            }
+        })
+        .await;
+        assert_eq!(
+            *refreshed.lock().unwrap(),
+            ["First", "Broken", "Last", "Also broken"]
+        );
+        let e = format!("{:#}", result.unwrap_err());
+        assert_eq!(
+            e,
+            "Couldn't refresh Broken, Also broken: Failed to refresh Broken: provider answered HTTP 503"
+        );
+    }
+
+    #[tokio::test]
+    async fn refresh_all_succeeds_when_every_source_does() {
+        let sources = vec![("Only".to_string(), ())];
+        assert!(refresh_each(sources, |_| async { Ok(()) }).await.is_ok());
+    }
 
     #[test]
     fn test_isolated_dirs() {
