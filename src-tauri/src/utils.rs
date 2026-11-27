@@ -443,6 +443,21 @@ pub fn check_nuke() -> Result<()> {
     Ok(())
 }
 
+/// A playlist's header value (Origin, Referer, User-Agent), or `None` when it is empty or holds
+/// a line break. A line break would let the playlist add its own headers to the request, or
+/// break it.
+pub fn header_value(value: Option<String>) -> Option<String> {
+    let value = value?;
+    if value.trim().is_empty() {
+        return None;
+    }
+    if value.contains(['\r', '\n']) {
+        log("Ignored an HTTP header with a line break in it".to_string());
+        return None;
+    }
+    Some(value)
+}
+
 pub fn get_user_agent_from_source(source: &Source) -> Result<String> {
     let user_agent: &str = source
         .user_agent

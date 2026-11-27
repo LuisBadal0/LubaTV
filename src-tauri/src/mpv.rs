@@ -8,7 +8,7 @@
 
 use crate::settings::get_default_record_path;
 use crate::types::{AppState, ChannelHttpHeaders, Source};
-use crate::utils::{bin_start_error, find_macos_bin, get_bin};
+use crate::utils::{bin_start_error, find_macos_bin, get_bin, header_value};
 use crate::{log, sql};
 use crate::{media_type, settings::get_settings, types::Channel};
 use anyhow::{Context, Result, anyhow, bail};
@@ -473,6 +473,9 @@ fn get_play_args(
         urls.extend(sql::find_all_episodes_after(channel)?);
         file_options.push((OPT_RESUME_PLAYBACK, NO.to_string()));
     }
+    for url in &urls {
+        check_url(url)?;
+    }
     let save_position = !live;
     if save_position {
         file_options.push((OPT_SAVE_POSITION_ON_QUIT, YES.to_string()));
@@ -542,6 +545,19 @@ fn get_play_args(
     })
 }
 
+/// mpv reads any argument that starts with `-` as an option, even between `--{` and `--}`,
+/// so a playlist whose "address" is `--script=…` would change how mpv runs. No stream address
+/// starts with `-`, so such a channel is refused. The message leaves out the address: Xtream
+/// addresses hold the account's username and password.
+fn check_url(url: &str) -> Result<()> {
+    if url.trim_start().starts_with('-') {
+        bail!(
+            "This channel's address starts with \"-\", so it isn't a stream address.              LubaTV won't pass it to mpv, which would read it as a setting."
+        );
+    }
+    Ok(())
+}
+
 fn set_headers(
     headers: Option<ChannelHttpHeaders>,
     options: &mut Vec<(&'static str, String)>,
@@ -549,16 +565,17 @@ fn set_headers(
 ) {
     let headers = headers.unwrap_or_default();
     let mut headers_vec: Vec<String> = Vec::with_capacity(2);
-    if let Some(origin) = headers.http_origin {
+    if let Some(origin) = header_value(headers.http_origin) {
         headers_vec.push(format!("{HTTP_ORIGIN}{origin}"));
     }
-    if let Some(referrer) = headers.referrer {
+    if let Some(referrer) = header_value(headers.referrer) {
         headers_vec.push(format!("{HTTP_REFERRER}{referrer}"));
     }
-    if let Some(user_agent) = headers
-        .user_agent
-        .or_else(|| source.as_ref().and_then(|f| f.stream_user_agent.clone()))
-    {
+    if let Some(user_agent) = header_value(
+        headers
+            .user_agent
+            .or_else(|| source.as_ref().and_then(|f| f.stream_user_agent.clone())),
+    ) {
         options.push((OPT_USER_AGENT, user_agent));
     }
     if headers.ignore_ssl == Some(true) {
@@ -884,6 +901,18 @@ mod ipc {
 #[allow(clippy::await_holding_lock)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn refuses_addresses_mpv_would_read_as_options() {
+        assert!(check_url("--script=evil.lua").is_err());
+        assert!(check_url(" -fs").is_err());
+        assert!(check_url("http://host.example/live/user/pass/1.ts").is_ok());
+        assert!(check_url("C:\\Videos\\-clip.mkv").is_ok());
+        let message = check_url("--ytdl-path=http://host.example/secret-user/secret-pass")
+            .unwrap_err()
+            .to_string();
+        assert!(!message.contains("secret"), "{message}");
+    }
 
     /// The window list is shared and close_all closes every window, so these run one at a time.
     static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());

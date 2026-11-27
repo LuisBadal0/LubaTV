@@ -21,8 +21,8 @@ use crate::{
     mpv,
     settings::get_settings,
     sql,
-    types::{AppState, Channel, CustomChannel, NetworkInfo},
-    utils::{bin_start_error, get_bin, serialize_to_file},
+    types::{AppState, Channel, ChannelHttpHeaders, CustomChannel, NetworkInfo},
+    utils::{bin_start_error, get_bin, header_value, serialize_to_file},
 };
 
 const WAN_IP_API: &str = "https://api.ipify.org";
@@ -32,29 +32,14 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Child> {
     let headers = sql::get_channel_headers_by_id(channel.id.context("no channel id")?)?;
+    let stream_user_agent = channel
+        .source_id
+        .and_then(|id| sql::get_source_from_id(id).ok())
+        .and_then(|source| source.stream_user_agent);
     let playlist_dir = get_playlist_dir(restream_dir);
     let ffmpeg_path = get_bin(FFMPEG_BIN_NAME);
     let mut command = Command::new(&ffmpeg_path);
-    if let Some(headers) = headers {
-        if let Some(referrer) = headers.referrer {
-            command.arg("-headers");
-            command.arg(format!("Referer: {referrer}"));
-        }
-        if let Some(user_agent) = headers.user_agent {
-            command.arg("-headers");
-            command.arg(format!("User-Agent: {user_agent}"));
-        }
-        if let Some(origin) = headers.http_origin {
-            command.arg("-headers");
-            command.arg(format!("Origin: {origin}"));
-        }
-        if let Some(ignore_ssl) = headers.ignore_ssl
-            && ignore_ssl
-        {
-            command.arg("-tls_verify");
-            command.arg("0");
-        }
-    }
+    command.args(header_args(headers, stream_user_agent));
     #[cfg(target_os = "windows")]
     command.creation_flags(CREATE_NO_WINDOW);
     let child = command
@@ -84,6 +69,38 @@ fn start_ffmpeg_listening(channel: Channel, restream_dir: PathBuf) -> Result<Chi
         .spawn()
         .with_context(|| bin_start_error(FFMPEG_BIN_NAME, &ffmpeg_path))?;
     Ok(child)
+}
+
+/// ffmpeg's input options for the channel's HTTP headers. ffmpeg keeps only the last
+/// `-headers` it is given, so Origin and Referer go in one value, each line ending in CRLF.
+/// The user agent has its own option and falls back to the source's stream user agent, as
+/// it does when mpv plays the channel.
+fn header_args(
+    headers: Option<ChannelHttpHeaders>,
+    stream_user_agent: Option<String>,
+) -> Vec<String> {
+    let headers = headers.unwrap_or_default();
+    let mut args = Vec::new();
+    let mut lines = String::new();
+    if let Some(origin) = header_value(headers.http_origin) {
+        lines.push_str(&format!("Origin: {origin}\r\n"));
+    }
+    if let Some(referrer) = header_value(headers.referrer) {
+        lines.push_str(&format!("Referer: {referrer}\r\n"));
+    }
+    if !lines.is_empty() {
+        args.push("-headers".to_string());
+        args.push(lines);
+    }
+    if let Some(user_agent) = header_value(headers.user_agent.or(stream_user_agent)) {
+        args.push("-user_agent".to_string());
+        args.push(user_agent);
+    }
+    if headers.ignore_ssl == Some(true) {
+        args.push("-tls_verify".to_string());
+        args.push("0".to_string());
+    }
+    args
 }
 
 async fn start_web_server(
@@ -224,4 +241,50 @@ async fn get_wan_ip(port: u16) -> Result<String> {
         "http://{}:{port}/stream.m3u8",
         reqwest::get(WAN_IP_API).await?.text().await?
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sends_every_header_in_one_value() {
+        let headers = ChannelHttpHeaders {
+            http_origin: Some("http://origin.example".to_string()),
+            referrer: Some("http://referrer.example/page".to_string()),
+            user_agent: Some("Channel Agent".to_string()),
+            ignore_ssl: Some(true),
+            ..Default::default()
+        };
+        assert_eq!(
+            header_args(Some(headers), Some("Source Agent".to_string())),
+            [
+                "-headers",
+                "Origin: http://origin.example\r\nReferer: http://referrer.example/page\r\n",
+                "-user_agent",
+                "Channel Agent",
+                "-tls_verify",
+                "0",
+            ]
+        );
+    }
+
+    #[test]
+    fn uses_the_source_user_agent_when_the_channel_has_none() {
+        assert_eq!(
+            header_args(None, Some("Source Agent".to_string())),
+            ["-user_agent", "Source Agent"]
+        );
+        assert!(header_args(None, None).is_empty());
+    }
+
+    #[test]
+    fn drops_headers_with_line_breaks() {
+        let headers = ChannelHttpHeaders {
+            referrer: Some("http://a.example\r\nX-Injected: 1".to_string()),
+            user_agent: Some("Agent\nX-Injected: 1".to_string()),
+            ..Default::default()
+        };
+        assert!(header_args(Some(headers), None).is_empty());
+    }
 }

@@ -11,6 +11,11 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 ## [Unreleased]
 
+### Fixed
+
+- Re-streaming a channel now sends all of the playlist's headers for it (Origin, Referer and user agent) and falls back to the source's stream user agent, as playing it does. Before, only the last header reached the provider, so channels that check the Referer could fail to re-stream.
+- LubaTV no longer plays a playlist entry whose address starts with "-". mpv would have read it as a setting rather than a stream, so a hostile playlist or shared file could change how mpv runs. Header values with line breaks in them are now ignored for the same reason.
+
 ## [1.8.0] - 2026-11-18
 
 ### Changed
