@@ -95,19 +95,20 @@ struct XtreamCategory {
 }
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct XtreamEPG {
-    epg_listings: Vec<XtreamEPGItem>,
+    /// Read one by one, so a programme that can't be read is skipped on its own.
+    epg_listings: Vec<serde_json::Value>,
 }
 
 /// One programme in a provider's guide. Providers leave out different fields (some send
-/// `stop` instead of `end`, or no archive flags), so only the start time is required.
+/// `stop` instead of `end`, nulls, or no archive flags), so only the times are required.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct XtreamEPGItem {
     #[serde(default)]
     id: serde_json::Value,
     #[serde(default)]
-    title: String,
+    title: Option<String>,
     #[serde(default)]
-    description: String,
+    description: Option<String>,
     start_timestamp: serde_json::Value,
     #[serde(default)]
     stop_timestamp: serde_json::Value,
@@ -117,8 +118,10 @@ struct XtreamEPGItem {
     has_archive: serde_json::Value,
     #[serde(default)]
     start: Option<String>,
-    #[serde(default, alias = "stop")]
+    #[serde(default)]
     end: Option<String>,
+    #[serde(default)]
+    stop: Option<String>,
 }
 
 fn build_xtream_url(source: &mut Source) -> Result<Url> {
@@ -576,7 +579,10 @@ pub async fn get_epg(channel: Channel) -> Result<Vec<EPG>> {
     let mut otv_epgs = Vec::new();
     for item in epg.epg_listings {
         // One programme the provider sent incomplete shouldn't hide the rest of the guide.
-        let item = match xtream_epg_to_epg(item, &url, &stream_id) {
+        let item = match serde_json::from_value(item)
+            .map_err(anyhow::Error::from)
+            .and_then(|item| xtream_epg_to_epg(item, &url, &stream_id))
+        {
             Ok(item) => item,
             Err(e) => {
                 log::log(format!(
@@ -604,14 +610,17 @@ fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<E
         get_serde_json_i64(&epg.start_timestamp).context("no valid start timestamp")?;
     let stop_timestamp =
         get_serde_json_i64(&epg.stop_timestamp).context("no valid end timestamp")?;
-    // Catch-up needs the start in the provider's own clock, which only `start` gives.
-    let timeshift_url = match (is_set(&epg.has_archive), epg.start) {
+    // Catch-up needs the start in the provider's own clock, which only `start` gives. When it
+    // can't be read the programme is still listed, without catch-up.
+    let timeshift_url = match (is_set(&epg.has_archive), epg.start.as_deref()) {
         (true, Some(start)) => {
-            let minutes = match epg.end {
-                Some(end) => minutes_between(&start, &end)?,
-                None => (stop_timestamp - start_timestamp) / 60,
-            };
-            Some(get_timeshift_url(url.clone(), &start, minutes, stream_id)?)
+            let minutes = epg
+                .end
+                .as_deref()
+                .or(epg.stop.as_deref())
+                .and_then(|end| minutes_between(start, end).ok())
+                .unwrap_or((stop_timestamp - start_timestamp) / 60);
+            get_timeshift_url(url.clone(), start, minutes, stream_id).ok()
         }
         _ => None,
     };
@@ -619,8 +628,8 @@ fn xtream_epg_to_epg(epg: XtreamEPGItem, url: &Url, stream_id: &str) -> Result<E
         epg_id: get_serde_json_string(&epg.id)
             .filter(|id| !id.is_empty())
             .unwrap_or_else(|| format!("{stream_id}-{start_timestamp}")),
-        title: decode_epg_text(&epg.title),
-        description: decode_epg_text(&epg.description),
+        title: decode_epg_text(epg.title.as_deref().unwrap_or_default()),
+        description: decode_epg_text(epg.description.as_deref().unwrap_or_default()),
         start_time: get_local_time(start_timestamp)?
             .format("%B %d, %H:%M")
             .to_string(),
@@ -640,9 +649,14 @@ fn is_set(value: &serde_json::Value) -> bool {
 }
 
 /// Xtream guides send titles and descriptions in base64; a few send them as plain text.
+/// Base64 has no spaces, so text with one is taken as it is.
 fn decode_epg_text(text: &str) -> String {
+    let trimmed = text.trim();
+    if trimmed.contains(char::is_whitespace) {
+        return text.to_string();
+    }
     BASE64_STANDARD
-        .decode(text.trim())
+        .decode(trimmed)
         .ok()
         .and_then(|bytes| String::from_utf8(bytes).ok())
         .unwrap_or_else(|| text.to_string())
@@ -853,6 +867,42 @@ mod tests {
         .unwrap();
         assert!(!epg.has_archive);
         assert!(epg.timeshift_url.is_none());
+    }
+
+    #[test]
+    fn reads_nulls_both_end_and_stop_and_odd_times() {
+        let epg = xtream_epg_to_epg(
+            item(
+                r#"{"id":null,"title":null,"description":null,"start":"2026-11-27 20:00:00","end":"2026-11-27 20:30:00","stop":"2026-11-27 20:30:00","start_timestamp":1795809600,"stop_timestamp":1795811400,"has_archive":1}"#,
+            ),
+            &base_url(),
+            "42",
+        )
+        .unwrap();
+        assert_eq!(epg.title, "");
+        assert!(epg.timeshift_url.unwrap().contains("duration=30"));
+
+        // An XMLTV-style `stop` falls back to the timestamps for the length.
+        let epg = xtream_epg_to_epg(
+            item(
+                r#"{"start":"2026-11-27 20:00:00","stop":"20261127203000 +0000","start_timestamp":1795809600,"stop_timestamp":1795813200,"has_archive":1}"#,
+            ),
+            &base_url(),
+            "42",
+        )
+        .unwrap();
+        assert!(epg.timeshift_url.unwrap().contains("duration=60"));
+
+        // A `start` that can't be read keeps the programme, without catch-up.
+        let epg = xtream_epg_to_epg(
+            item(
+                r#"{"start":"20261127200000 +0000","start_timestamp":1795809600,"stop_timestamp":1795811400,"has_archive":1}"#,
+            ),
+            &base_url(),
+            "42",
+        )
+        .unwrap();
+        assert!(!epg.has_archive);
     }
 
     #[test]
