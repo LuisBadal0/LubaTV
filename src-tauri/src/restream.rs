@@ -92,7 +92,9 @@ fn header_args(
         args.push("-headers".to_string());
         args.push(lines);
     }
-    if let Some(user_agent) = header_value(headers.user_agent.or(stream_user_agent)) {
+    if let Some(user_agent) =
+        header_value(headers.user_agent).or_else(|| header_value(stream_user_agent))
+    {
         args.push("-user_agent".to_string());
         args.push(user_agent);
     }
@@ -285,6 +287,10 @@ mod tests {
             user_agent: Some("Agent\nX-Injected: 1".to_string()),
             ..Default::default()
         };
-        assert!(header_args(Some(headers), None).is_empty());
+        assert!(header_args(Some(headers.clone()), None).is_empty());
+        assert_eq!(
+            header_args(Some(headers), Some("Source Agent".to_string())),
+            ["-user_agent", "Source Agent"]
+        );
     }
 }

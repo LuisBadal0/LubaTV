@@ -558,6 +558,18 @@ fn check_url(url: &str) -> Result<()> {
     Ok(())
 }
 
+/// A header value for `http-header-fields`, which mpv splits at commas. There is no way to
+/// escape one (and loadfile keeps only one value per option), so a value with a comma would
+/// become a header of the playlist's choosing; it is left out instead.
+fn header_field_value(value: Option<String>) -> Option<String> {
+    let value = header_value(value)?;
+    if value.contains(',') {
+        log::log("Ignored an HTTP header with a comma in it".to_string());
+        return None;
+    }
+    Some(value)
+}
+
 fn set_headers(
     headers: Option<ChannelHttpHeaders>,
     options: &mut Vec<(&'static str, String)>,
@@ -565,17 +577,15 @@ fn set_headers(
 ) {
     let headers = headers.unwrap_or_default();
     let mut headers_vec: Vec<String> = Vec::with_capacity(2);
-    if let Some(origin) = header_value(headers.http_origin) {
+    if let Some(origin) = header_field_value(headers.http_origin) {
         headers_vec.push(format!("{HTTP_ORIGIN}{origin}"));
     }
-    if let Some(referrer) = header_value(headers.referrer) {
+    if let Some(referrer) = header_field_value(headers.referrer) {
         headers_vec.push(format!("{HTTP_REFERRER}{referrer}"));
     }
-    if let Some(user_agent) = header_value(
-        headers
-            .user_agent
-            .or_else(|| source.as_ref().and_then(|f| f.stream_user_agent.clone())),
-    ) {
+    if let Some(user_agent) = header_value(headers.user_agent)
+        .or_else(|| header_value(source.as_ref().and_then(|f| f.stream_user_agent.clone())))
+    {
         options.push((OPT_USER_AGENT, user_agent));
     }
     if headers.ignore_ssl == Some(true) {
@@ -913,6 +923,44 @@ mod tests {
             .to_string();
         assert!(!message.contains("secret"), "{message}");
         assert!(!message.contains("  "), "{message}");
+    }
+
+    fn header_options(
+        headers: ChannelHttpHeaders,
+        stream_user_agent: Option<&str>,
+    ) -> Vec<(&'static str, String)> {
+        let source: Option<Source> = stream_user_agent.map(|agent| {
+            serde_json::from_value(json!({
+                "name": "Test",
+                "source_type": 0,
+                "enabled": true,
+                "stream_user_agent": agent,
+            }))
+            .unwrap()
+        });
+        let mut options = Vec::new();
+        set_headers(Some(headers), &mut options, &source);
+        options
+    }
+
+    #[test]
+    fn playlist_headers_cannot_add_headers_of_their_own() {
+        let options = header_options(
+            ChannelHttpHeaders {
+                http_origin: Some("http://origin.example".to_string()),
+                referrer: Some("http://a.example,Cookie: session=x".to_string()),
+                user_agent: Some("Agent\r\nCookie: session=x".to_string()),
+                ..Default::default()
+            },
+            Some("Source Agent"),
+        );
+        assert_eq!(
+            options,
+            [
+                (OPT_USER_AGENT, "Source Agent".to_string()),
+                (OPT_HTTP_HEADERS, "origin:http://origin.example".to_string()),
+            ]
+        );
     }
 
     /// The window list is shared and close_all closes every window, so these run one at a time.
