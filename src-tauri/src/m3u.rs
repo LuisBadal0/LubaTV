@@ -102,7 +102,7 @@ pub fn read_m3u8(mut source: Source, wipe: bool) -> Result<()> {
             ) {
                 processing.channel_headers_set = true;
             }
-        } else if !l1.trim().is_empty() {
+        } else if is_address_line(&l1) {
             processing.last_non_empty_line = Some(l1);
         }
     }
@@ -113,6 +113,14 @@ pub fn read_m3u8(mut source: Source, wipe: bool) -> Result<()> {
     sql::analyze(&tx)?;
     tx.commit()?;
     Ok(())
+}
+
+/// Whether a line can be a channel's address. Lines starting with `#` are comments or tags
+/// (`# === News ===`, `#EXTGRP:…`); taking one as the address would replace the real one
+/// above it.
+fn is_address_line(line: &str) -> bool {
+    let line = line.trim();
+    !line.is_empty() && !line.starts_with('#')
 }
 
 fn try_commit_channel(processing: &mut M3UProcessing, tx: &Transaction) {
@@ -298,7 +306,17 @@ fn get_media_type(url: String) -> u8 {
 #[cfg(test)]
 mod test_m3u {
 
-    use crate::m3u::get_channel_from_lines;
+    use crate::m3u::{get_channel_from_lines, is_address_line};
+
+    #[test]
+    fn comments_and_tags_are_not_addresses() {
+        assert!(is_address_line("http://myurl.local/1234/1234.m3u8"));
+        assert!(is_address_line("  http://myurl.local/1234/1234.m3u8  "));
+        assert!(!is_address_line("# === BS放送 ==="));
+        assert!(!is_address_line("  #EXTGRP:News"));
+        assert!(!is_address_line("#"));
+        assert!(!is_address_line("   "));
+    }
 
     #[test]
     fn test_get_channel_from_lines() {

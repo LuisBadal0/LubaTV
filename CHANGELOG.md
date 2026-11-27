@@ -15,6 +15,7 @@ that version and date, and starts a new, empty **Unreleased** section above it.
 
 - Re-streaming a channel now sends all of the playlist's headers for it (Origin, Referer and user agent) and falls back to the source's stream user agent, as playing it does. Before, only the last header reached the provider, so channels that check the Referer could fail to re-stream.
 - LubaTV no longer plays a playlist entry whose address starts with "-". mpv would have read it as a setting rather than a stream, so a hostile playlist or shared file could change how mpv runs. Playlist header values that would let it add headers of its own to the request (a line break in any header, or a comma in Origin or Referer) are now ignored for the same reason.
+- Channels followed by a comment line in an M3U playlist (such as `# === News ===`) play again. LubaTV used to take the comment as the channel's address, which most often broke the last channel of each category.
 
 ## [1.8.0] - 2026-11-18
 
