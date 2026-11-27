@@ -552,7 +552,7 @@ fn get_play_args(
 fn check_url(url: &str) -> Result<()> {
     if url.trim_start().starts_with('-') {
         bail!(
-            "This channel's address starts with \"-\", so it isn't a stream address.              LubaTV won't pass it to mpv, which would read it as a setting."
+            "This channel's address starts with \"-\", so it isn't a stream address. LubaTV won't pass it to mpv, which would read it as a setting."
         );
     }
     Ok(())
@@ -912,6 +912,7 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(!message.contains("secret"), "{message}");
+        assert!(!message.contains("  "), "{message}");
     }
 
     /// The window list is shared and close_all closes every window, so these run one at a time.
